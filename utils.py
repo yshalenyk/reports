@@ -1,6 +1,10 @@
 import couchdbkit as ckit
 import os.path
+import csv
+import os
+import os.path
 from couchdbkit.exceptions import ResourceNotFound
+
 import ConfigParser
 
 
@@ -24,19 +28,35 @@ def get_config(name):
         configs[section] = config.items(section)
     return configs
 
-def get_db(server, db_name):
+def get_db(schema, db_name):
+    server = ckit.Server(schema)
     try:
         db = server.get_db(db_name)
     except ResourceNotFound:
         print "Database not esists!"
     return db
 
-def get_server(schema):
-    server = ckit.Server(schema)
-    return server
+
+def get_payment(value, thrasholds, payments):
+    index = 0
+    for th in thrasholds:
+        if value <= th:
+            return payments[index]
+        index += 1
+    return payments[-1]
 
 
-def get_response(view_name,*args, **kwargs):
-    return  db.view(view_name, args=args, kwargs=kwargs)
+def write_csv(name, headers, rows):
+    with open(name, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(headers)
+        for row in rows:
+            writer.writerow(row)
 
-
+def build_name(key, start_date, end_date=''):
+    if end_date:
+        end_date = "--" + end_date
+    name = key + "." + start_date + end_date + ".csv"
+    if not os.path.exists("release/"):
+        os.mkdir("release/")
+    return "release/" + name
