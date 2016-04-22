@@ -60,3 +60,19 @@ def build_name(key, start_date, end_date=''):
     if not os.path.exists("release/"):
         os.mkdir("release/")
     return "release/" + name
+
+def build_thr_headers(thold):
+    prev_th = None
+    result = []
+    thrash = []
+    for i in thold:
+        thrash.append(str(i/1000))
+    for th in thrash:
+        if not prev_th:
+            result.append("<= " + th)
+        else:
+            result.append(">" + prev_th + "<=" + th)
+        prev_th = th
+    result.append(">" + thrash[-1])
+
+    return result

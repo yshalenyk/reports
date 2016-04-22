@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", nargs="+",required=True,  help="dates")
     args = parser.parse_args()
     if len(args.d) > 2:
-        raise Exception()
+        raise Exception
     db = get_db(db_schema, db_name)
     key = args.o.strip()
     if key in OWNERS:
