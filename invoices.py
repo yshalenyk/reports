@@ -6,7 +6,6 @@ from dateparser import parse
 from collections import Counter
 VIEW = "reports/bids"
 
-HEADERS = ["tender", "lot", "value", "bid", "bill"]
 
 conf = get_config("config.cfg")
 db_schema = "http://" + conf["db"][0][1]
@@ -64,11 +63,8 @@ if __name__ == "__main__":
     else:
         resp =  db.view("reports/bids", startkey=startkey).iterator()
         name = build_name(owner, startdate)
-    c = 0
     for row in resp:
         count_row(row)
-        c += 1
-    print c
     rows = build_rows()
     write_csv(name, headers, rows)
 
