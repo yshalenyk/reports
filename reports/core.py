@@ -1,15 +1,11 @@
 import couchdbkit
-#import couchdb
 import os.path
 import csv
 import os
 import os.path
-import click
 from restkit import BasicAuth
 from config import Config
 from couchdbkit.exceptions import ResourceNotFound
-from dateparser import parse
-from ConfigParser import NoSectionError
 
 
 
@@ -51,7 +47,7 @@ class ReportUtility():
             self.config.logger.info("Database not esists!")
             raise
         self.db = db
-        
+
 
     def get_payment(self, value):
         index = 0
@@ -68,29 +64,6 @@ class ReportUtility():
             self.response =self.db.view(self.view, startkey=startkey, endkey=endkey).iterator()
         else:
             self.response = self.db.view(self.view, startkey=startkey).iterator()
-
-
-#class BaseDateParamType(click.ParamType):
-#    name = 'date'
-#
-#    def convert(self, value, param, ctx) :
-#        try:
-#            #date1, date2 = value.split()
-#            #return (parse(date1.strip()), parse(date2.strip()))
-#            return parse(value)
-#        except ValueError:
-#            self.fail('{} is not a valid date'.format(value))
-#
-#class ListType(click.CompositeParamType):
-#    name = 'date'
-#
-#    def convert(self, value, param, ctx) :
-#        try:
-#            #date1, date2 = value.split()
-#            #return (parse(date1.strip()), parse(date2.strip()))
-#            return parse(value)
-#        except ValueError:
-#            self.fail('{} is not a valid date'.format(value))
 
 
 
@@ -131,23 +104,3 @@ def thresholds_headers(thold):
     return result
 
 
-
-def parse_args(args):
-    endkey = []
-    if len(args.d) > 2:
-        raise Exception
-    key = args.o.strip()
-    if key in OWNERS:
-        owner = OWNERS[key]
-    elif key in OWNERS.values():
-        owner = key
-    else:
-        raise Exception
-    startdate = parse(args.d[0]).isoformat()
-    if len(args.d) > 1:
-        enddate = parse(args.d[1]).isoformat()
-        endkey = [owner, enddate]
-    else:
-        enddate = ''
-    startkey = [owner, startdate]
-    return owner, startkey, endkey
