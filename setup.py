@@ -5,6 +5,7 @@ from setuptools import setup
 install_requires = [
     'couchdbkit>=0.6.5',
     'dateparser>=0.3.4',
+    'appdirs>=1.4.0',
 ]
 
 

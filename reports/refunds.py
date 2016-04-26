@@ -1,60 +1,72 @@
-from utils import *
-import couchdbkit as ckit
-import argparse
-import datetime
+import sys
+from core import *
 from dateparser import parse
-from collections import Counter
-VIEW = "reports/bids"
 
 
-conf = get_config("config.cfg")
-db_schema = "http://" + conf.get("db", "schema")
-db_name = conf.get("db", "name")
 
-db = get_db(db_schema, db_name)
-thresholds = get_thesholds(conf) 
-paymens = get_payments(conf)
+class RefundsUtility(ReportUtility):
 
-headers = build_thresholds_headers(thresholds)
+    def __init__(self):
+        ReportUtility.__init__(self, 'bids', rev=True)
+        
+        self.headers = thresholds_headers(self.thresholds)
+        self.tenders = set()
+        self.counter = [0 for _ in xrange(len(self.payments))]
+        self.rows = [self.counter, self.payments]
 
-counter = [0 for _ in xrange(len(paymens))]
+    def count_row(self, record):
+        # skip lots for now
+        if "lot" in record:
+            return
+        #-------------------- 
+        value = record["value"]
+        id = record["tender"]
+        if id not in self.tenders:
+            self.tenders.add(id)
+            payment = self.get_payment(float(value))
+            for i, x in enumerate(self.payments):
+                if payment == x:
+                    self.counter[i] += 1
 
-tenders_set = set()
 
-def count_row(rec):
-    record = rec["value"]
-    if "lot" in record:
-        return
-    value = record["value"]
-    id = record["tender"]
-    if id not in tenders_set:
-        tenders_set.add(id)
-        payment = get_payment(value, thresholds, paymens)
-        for i, x in enumerate(paymens):
-            if payment == x:
-                counter[i] += 1
-def build_rows():
-    rows = [counter, paymens]
-    row = []
-    for c, v in zip(counter, paymens):
-        row.append(c*v)
-    rows.append(row)
-    return rows
+    def get_rows(self):
+        row = []
+        for c, v in zip(self.counter, self.payments):
+            row.append(c*v)
+        self.rows.append(row)
 
+    def count_rows(self):
+        for resp in self.response:
+            self.count_row(resp['value'])
+    
+
+
+
+
+    def run(self):
+        if len(sys.argv) < 3:
+            raise RuntimeError
+        owner = OWNERS[sys.argv[1]]
+        start_key =[owner, parse(sys.argv[2]).isoformat()] 
+        if len(sys.argv) > 3:
+            end_key = [owner, parse(sys.argv[3]).isoformat()]
+        else:
+            end_key = ''
+
+        self.get_response(start_key, end_key)
+        self.count_rows()
+        self.get_rows()
+        file_name = build_name(owner, start_key, end_key, 'refunds')
+
+        write_csv(file_name, self.headers, self.rows)
+
+
+def run():
+    utility = RefundsUtility()
+    utility.run()
 
 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", type=str, required=True, help="owner")
-    parser.add_argument("-d", nargs="+",required=True,  help="dates")
-    args = parser.parse_args()
-    owner, startkey, endkey = parse_args(args)
-    response = get_response(db, VIEW, startkey, endkey)
-    name = build_name(owner, startkey, endkey, "refunds")
-    for row in response:
-        count_row(row)
-    rows = build_rows()
-    write_csv(name, headers, rows)
-
+    run()

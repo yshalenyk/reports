@@ -1,53 +1,58 @@
-from utils import *
-import couchdbkit as ckit
-import argparse
-import datetime
+from core import *
+import sys
 from dateparser import parse
 
 
-VIEW = "reports/bids"
+class BidsUtility(ReportUtility):
 
-HEADERS = ["tender", "lot", "value", "bid", "bill"]
-
-conf = get_config("config.cfg")
-db_schema = "http://" + conf.get("db", "schema")
-db_name = conf.get("db", "name")
-
-db = get_db(db_schema, db_name)
-thresholds = get_thesholds(conf) 
-paymens = get_payments(conf) 
-
-def build_row(rec):
-    row = []
-    record = rec["value"]
-    row.append(record["tender"])
-    try:
-           row.append(record["lot"])
-    except KeyError:
-           row.append("")
-    value = record["value"]
-    row.append(value)
-    row.append(record["bid"])
-    row.append(get_payment(float(value), thresholds, paymens))
-    return row
-
-def rows(response):
-    for resp in response:
-        yield build_row(resp)
+    def __init__(self):
+        ReportUtility.__init__(self, 'bids')
+        
+        self.headers = [u"tender", u"lot", u"value", u"bid", u"bill"]
 
 
+    def row(self, record):
+        row = []
+        for k in self.headers[:-1]:
+            try:
+                cell = record[k]
+                if k == u'value':
+                    bill = self.get_payment(float(cell))
+                row.append(cell)
+            except KeyError:
+                row.append('')
+        row.append(bill)
+        return row
+
+    def rows(self):
+        for resp in self.response:
+            yield self.row(resp["value"])
+
+    def run(self):
+        if len(sys.argv) < 3:
+            raise RuntimeError
+        owner = OWNERS[sys.argv[1]]
+        start_key =[owner, parse(sys.argv[2]).isoformat()] 
+        if len(sys.argv) > 3:
+            end_key = [owner, parse(sys.argv[3]).isoformat()]
+        else:
+            end_key = ''
+
+        self.get_response(start_key, end_key)
+        file_name = build_name(owner, start_key, end_key, 'bids')
+
+        write_csv(file_name, self.headers, self.rows())
+
+        
 
 
-
-
+        
+        
+        
+def run():
+    utility= BidsUtility()
+    utility.run()
+   
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", type=str, required=True, help="owner")
-    parser.add_argument("-d", nargs="+",required=True,  help="dates")
-    args = parser.parse_args()
-    owner, startkey ,endkey = parse_args(args)
-    response = get_response(db, VIEW, startkey, endkey)
-    name = build_name(owner, startkey, endkey, "bids")
-    write_csv(name, HEADERS, rows(response))
-
+    run()

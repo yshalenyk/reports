@@ -1,12 +1,16 @@
-import couchdbkit as ckit
+import couchdbkit
+#import couchdb
 import os.path
 import csv
 import os
 import os.path
+import click
+from restkit import BasicAuth
+from config import Config
 from couchdbkit.exceptions import ResourceNotFound
 from dateparser import parse
+from ConfigParser import NoSectionError
 
-import ConfigParser
 
 
 OWNERS = {
@@ -20,35 +24,76 @@ OWNERS = {
 }
 
 
-def get_config(name):
-    config = ConfigParser.ConfigParser()
-    config.read(name)
-    return config
 
-def get_db(schema, db_name):
-    server = ckit.Server(schema)
-    try:
-        db = server.get_db(db_name)
-    except ResourceNotFound:
-        print "Database not esists!"
-    return db
+class ReportUtility():
+
+    def __init__(self, operation, rev=False):
+        self.rev = rev
+        self.config = Config()
+        self.operation = operation
+        name, uri, user, passwd = self.config.get_db_params()
+
+        if user and passwd:
+            resource = couchdbkit.resource.CouchdbResource(filters=[BasicAuth(user, passwd)])
+            self.server = couchdbkit.Server(uri, resource_instance=resource)
+        else:
+            self.server = couchdbkit.Server(uri)
+        self.get_db(name)
+        self.thresholds = self.config.get_thresholds()
+        self.payments = self.config.get_payments(self.rev)
+        self.view = 'reports/bids'
 
 
-def get_payment(value, thresholds, payments):
-    index = 0
-    for th in thresholds:
-        if value <= th:
-            return payments[index]
-        index += 1
-    return payments[-1]
+    def get_db(self, db_name):
+        try:
+            db = self.server.get_db(db_name)
+        except ResourceNotFound:
+            self.config.logger.info("Database not esists!")
+            raise
+        self.db = db
+        
 
-def get_response(db, view, startkey='', endkey=''):
-    if not startkey:
-        return db.view(view).iterator()
-    if endkey:
-        return db.view(view, startkey=startkey, endkey=endkey).iterator()
-    else:
-        return db.view(view, startkey=startkey).iterator()
+    def get_payment(self, value):
+        index = 0
+        for th in self.thresholds:
+            if value <= th:
+                return self.payments[index]
+            index += 1
+        return self.payments[-1]
+
+    def get_response(self, startkey='', endkey=''):
+        if not startkey:
+            self.response = self.db.view(self.view).iterator()
+        if endkey:
+            self.response =self.db.view(self.view, startkey=startkey, endkey=endkey).iterator()
+        else:
+            self.response = self.db.view(self.view, startkey=startkey).iterator()
+
+
+#class BaseDateParamType(click.ParamType):
+#    name = 'date'
+#
+#    def convert(self, value, param, ctx) :
+#        try:
+#            #date1, date2 = value.split()
+#            #return (parse(date1.strip()), parse(date2.strip()))
+#            return parse(value)
+#        except ValueError:
+#            self.fail('{} is not a valid date'.format(value))
+#
+#class ListType(click.CompositeParamType):
+#    name = 'date'
+#
+#    def convert(self, value, param, ctx) :
+#        try:
+#            #date1, date2 = value.split()
+#            #return (parse(date1.strip()), parse(date2.strip()))
+#            return parse(value)
+#        except ValueError:
+#            self.fail('{} is not a valid date'.format(value))
+
+
+
 
 def write_csv(name, headers, rows):
     with open(name, 'w') as csv_file:
@@ -56,6 +101,7 @@ def write_csv(name, headers, rows):
         writer.writerow(headers)
         for row in rows:
             writer.writerow(row)
+
 
 def build_name(key, start_key, end_key, procedure):
     if end_key:
@@ -69,7 +115,7 @@ def build_name(key, start_key, end_key, procedure):
         os.mkdir("release/")
     return "release/" + name
 
-def build_thresholds_headers(thold):
+def thresholds_headers(thold):
     prev_th = None
     result = []
     thrash = []
@@ -82,18 +128,8 @@ def build_thresholds_headers(thold):
             result.append(">" + prev_th + "<=" + th)
         prev_th = th
     result.append(">" + thrash[-1])
-
     return result
 
-
-def get_thesholds(conf):
-   return [float(item[1]) for item in conf.items("thresholds")]
-
-def get_payments(conf, rev=False):
-    if not rev:
-        return [float(item[1]) for item in conf.items("payments_from_emall")]
-    else:
-        return [float(item[1]) for item in conf.items("payments_to_emall")]
 
 
 def parse_args(args):

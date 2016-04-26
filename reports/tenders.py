@@ -1,61 +1,68 @@
-from utils import *
-import couchdbkit as ckit
-import argparse
-import datetime
+import sys
+from core import *
 from dateparser import parse
 
+class TendersUtility(ReportUtility):
+
+    def __init__(self):
+        ReportUtility.__init__(self, 'bids', rev=True)
+        
+        self.headers = ["tender", "value", "bill"]
+        self.tenders = set()
+
+    def row(self, record):
+        row = []
+        id = record["tender"]
+
+        #temporarily skip lots
+        if "lot" in record:
+            return None
+        # --------------
+        if id  not in self.tenders:
+            self.tenders.add(id)
+            row.append(id)
+            value= record["value"]
+            row.append(value)
+            row.append(self.get_payment(float(value)))
+            return row
 
 
-VIEW = "reports/bids"
-
-HEADERS = ["tender", "value", "bill"]
-
-conf = get_config("config.cfg")
-db_schema = "http://" + conf.get("db", "schema")
-db_name = conf.get("db", "name")
-
-db = get_db(db_schema, db_name)
-thresholds = get_thesholds(conf) 
-paymens = get_payments(conf, rev=True)
-
-tenders_set = set()
-
-
-def build_row(rec):
-    row = []
-    record = rec["value"]
-    id = record["tender"]
-    if "lot" in record:
-        return None
-    if id  not in tenders_set:
-        tenders_set.add(id)
-        row.append(id)
-        value= record["value"]
-        row.append(value)
-        row.append(get_payment(float(value), thresholds, paymens))
-        return row
-    else:
-        return None
-
-def rows(response):
-    for resp in response:
-        row = build_row(resp)
-        if row:
-            yield row
+    def rows(self):
+        for resp in self.response:
+            r = self.row(resp['value'])
+            if r:
+                yield r
 
 
 
+    def run(self):
+        if len(sys.argv) < 3:
+            raise RuntimeError
+        owner = OWNERS[sys.argv[1]]
+        start_key =[owner, parse(sys.argv[2]).isoformat()] 
+        if len(sys.argv) > 3:
+            end_key = [owner, parse(sys.argv[3]).isoformat()]
+        else:
+            end_key = ''
+
+        self.get_response(start_key, end_key)
+        file_name = build_name(owner, start_key, end_key, 'tenders')
+
+        write_csv(file_name, self.headers, self.rows())
+
+        
+
+
+        
+        
+        
+def run():
+    utility= TendersUtility()
+    utility.run()
+ 
 
 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", type=str, required=True, help="owner")
-    parser.add_argument("-d", nargs="+",required=True,  help="dates")
-    args = parser.parse_args()
-    owner, startkey, endkey = parse_args(args)
-    response = get_response(db ,VIEW, startkey, endkey)
-    name = build_name(owner, startkey, endkey, "tenders")
-    write_csv(name, HEADERS, rows(response))
-
+    run()

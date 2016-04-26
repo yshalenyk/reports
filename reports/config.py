@@ -1,3 +1,4 @@
+from __future__ import print_function
 import appdirs
 import os
 import os.path
@@ -44,10 +45,10 @@ class Config():
         try:
             opt = self.config.get(section, name)
         except NoSectionError:
-            print "No section {} in configuration file".format(section)
+            print("No section {} in configuration file".format(section))
             sys.exit(1)
         except NoOptionError:
-            print "No option {} in configuration file".format(name)
+            print("No option {} in configuration file".format(name))
             sys.exit(1)
         return opt
 
@@ -55,21 +56,23 @@ class Config():
 
     def get_db_params(self):
         db_name = self.get_option('db', 'name') 
-        db_schema = self.get_option('db', 'schema')
-        return db_name, db_schema
+        db_schema = self.get_option('db', 'uri')
+        db_user = self.get_option('db', 'username')
+        db_password = self.get_option('db', 'password')
+        return db_name, db_schema, db_user, db_password
 
 
     def get_thresholds(self):
         t = self.config.get('payments', 'thresholds')
-        return t
+        return [float(i.strip()) for i in t.split(',')]
 
 
     def get_payments(self, rev=False):
         if rev:
-            p = self.config.get('payments', "cdb")
-        else:
             p = self.config.get('payments', "emall")
-        return p
+        else:
+            p = self.config.get('payments', "cdb")
+        return [float(i.strip()) for i in p.split(',')]
 
     def get_view(self, name):
         view = self.get_option('views', name)
@@ -86,10 +89,5 @@ class Config():
 
 if __name__ == '__main__':
     config = Config()
-    print config.get_thresholds()
-    print config.get_payments()
-    print config.get_db_params()
-    print config.get_view('bids')
-
         
         
