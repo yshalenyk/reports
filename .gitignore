@@ -1,0 +1,8 @@
+env/
+.env/
+\.\#
+eggs/
+bin/
+etc/
+develop-eggs/
+src/
