@@ -32,9 +32,15 @@ class ReportUtility():
 
     def __init__(self, operation, rev=False):
         self.rev = rev
-        self.init_from_args()
         self.headers = None
         self.operation = operation
+    def init_from_args(self, owner, period, config=None):
+        self.owner = OWNERS[owner]
+        self.config = Config(config)
+        if len(period) != 2:
+            raise ValueError('Invalid period')
+        self.start_date = parse(period[0]).isoformat()
+        self.end_date = parse(period[1]).isoformat()
         name, uri = self.config.get_db_params()
         self.server = couchdb.Server(uri)
         if name not in self.server:
@@ -44,18 +50,6 @@ class ReportUtility():
         self.payments = self.config.get_payments(self.rev)
         self.view = 'report/bids'
 
-    def init_from_args(self):
-        parser = ArgumentParser()
-        parser.add_argument('-o', '--owner', dest='owner',  required=True)
-        parser.add_argument('-c', '--config', dest='config')
-        parser.add_argument('-p', '--period', nargs='+', dest='period')
-        args = parser.parse_args()
-        self.owner = OWNERS[args.owner]
-        self.config = Config(args.config)
-        if len(args.period) != 2:
-            raise ValueError('Invalid period')
-        self.start_date = parse(args.period[0]).isoformat()
-        self.end_date = parse(args.period[1]).isoformat()
 
 
     def row(self):
@@ -126,4 +120,11 @@ def thresholds_headers(thresholds):
     result.append(">" + threshold[-1])
     return result
 
-
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('-o', '--owner', dest='owner',  required=True)
+    parser.add_argument('-c', '--config', dest='config', required=False, default='~/.config/reports/reports.ini')
+    parser.add_argument('-p', '--period', nargs='+', dest='period')
+    args = parser.parse_args()
+    return args.owner.strip(), args.period, args.config
+   

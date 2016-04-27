@@ -31,6 +31,8 @@ class BidsUtility(ReportUtility):
        
 def run():
     utility= BidsUtility()
+    owner, period, config = parse_args()
+    utility.init_from_args(owner, period, config)
     utility.run()
    
 

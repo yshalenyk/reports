@@ -9,11 +9,7 @@ class InvoicesUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'invoices')
         
-        self.headers = thresholds_headers(self.thresholds)
-        self.counter = [0 for _ in xrange(len(self.payments))]
-        self._rows = [self.counter, self.payments]
-
- 
+    
 
 
     def row(self, record):
@@ -42,6 +38,11 @@ class InvoicesUtility(ReportUtility):
 
 def run():
     utility= InvoicesUtility()
+    owner, period, config = parse_args()
+    utility.init_from_args(owner, period, config)
+    utility.headers = thresholds_headers(utility.thresholds)
+    utility.counter = [0 for _ in xrange(len(utility.payments))]
+    utility._rows = [utility.counter, utility.payments]
     utility.run()
  
 

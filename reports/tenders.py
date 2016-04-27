@@ -37,6 +37,8 @@ class TendersUtility(ReportUtility):
         
 def run():
     utility= TendersUtility()
+    owner, period, config = parse_args()
+    utility.init_from_args(owner, period, config)
     utility.run()
  
 
