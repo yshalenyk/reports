@@ -6,3 +6,4 @@ bin/
 etc/
 develop-eggs/
 src/
+\.*
