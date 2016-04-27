@@ -1,3 +1,2 @@
-couchdbkit
+couchdb
 dateparser
-appdirs
