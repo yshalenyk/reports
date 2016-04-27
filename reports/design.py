@@ -3,7 +3,7 @@ import couchdb.design
 
 
 bids = '''function(doc) {
-    var data = doc.data;
+    var data = doc;
     var random = function () {
         var owners = ["it.ua", "netcast.com.ua", "privatmarket.ua", "prom.ua", "e-tender.biz", "public-bid.com.ua", "newtend.com"];
 
