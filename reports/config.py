@@ -1,5 +1,3 @@
-from __future__ import print_function
-import appdirs
 import os
 import os.path
 import logging
@@ -10,32 +8,17 @@ from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 
 class Config():
 
-    def __init__(self):
-        app_name = 'reports'
-        self.dirs = appdirs.AppDirs(app_name)
-        self.init_config(app_name)
-        self.init_logger(app_name)
+    def __init__(self, path):
+        self.config = ConfigParser()
+        self.config.read(path)
+        self.init_logger()
         self.get_db_params()
 
-    def init_config(self, app_name):
-        conf_path = self.dirs.user_config_dir
-
-        if not os.path.exists(conf_path):
-            os.makedirs(conf_path)
-        conf_file = os.path.join(self.dirs.user_config_dir, '{}.cfg'.format(app_name))
-        if not os.path.exists(conf_file):
-            with open(conf_file, 'w'):
-                pass
-        self.config = ConfigParser()
-        self.config.read(conf_file)
-
-    def init_logger(self, name):
-        log_path = self.dirs.user_log_dir
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
+    def init_logger(self):
+        log_file = self.get_option('loggers', 'log_file')
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
-        fh = logging.FileHandler(os.path.join(log_path, '{}.log'.format(name)))
+        fh = logging.FileHandler(log_file)
         fh.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s -- %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
@@ -57,9 +40,7 @@ class Config():
     def get_db_params(self):
         db_name = self.get_option('db', 'name') 
         db_schema = self.get_option('db', 'uri')
-        db_user = self.get_option('db', 'username')
-        db_password = self.get_option('db', 'password')
-        return db_name, db_schema, db_user, db_password
+        return db_name, db_schema
 
 
     def get_thresholds(self):
@@ -74,20 +55,5 @@ class Config():
             p = self.config.get('payments', "cdb")
         return [float(i.strip()) for i in p.split(',')]
 
-    def get_view(self, name):
-        view = self.get_option('views', name)
-        return view
-        
-            
-            
-
-
-
-
-   
-
-
-if __name__ == '__main__':
-    config = Config()
-        
-        
+    def get_out_path(self):
+        return self.get_option('out', 'out_dir')

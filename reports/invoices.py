@@ -11,48 +11,33 @@ class InvoicesUtility(ReportUtility):
         
         self.headers = thresholds_headers(self.thresholds)
         self.counter = [0 for _ in xrange(len(self.payments))]
-        self.rows = [self.counter, self.payments]
+        self._rows = [self.counter, self.payments]
+
+ 
 
 
-    def count_row(self, record):
+    def row(self, record):
         value = record["value"]
         payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
                 self.counter[i] += 1
 
-
-    def count_rows(self):
-        for resp in self.response:
-            self.count_row(resp['value'])
- 
-
+       
     def get_rows(self):
         row = []
         for c, v in zip(self.counter, self.payments):
             row.append(c*v)
-        self.rows.append(row)
-        
+        self._rows.append(row)
 
-
-
-    def run(self):
-        if len(sys.argv) < 3:
-            raise RuntimeError
-        
-        owner = OWNERS[sys.argv[1]]
-        start_key =[owner, parse(sys.argv[2]).isoformat()] 
-        if len(sys.argv) > 3:
-            end_key = [owner, parse(sys.argv[3]).isoformat()]
-        else:
-            end_key = ''
-
-        self.get_response(start_key, end_key)
-        self.count_rows()
+    def rows(self):
+        for resp in self.response:
+            self.row(resp['value'])
         self.get_rows()
-        file_name = build_name(owner, start_key, end_key, 'invoices')
+        for row in self._rows:
+            yield row
+        
 
-        write_csv(file_name, self.headers, self.rows)
 
 
 def run():

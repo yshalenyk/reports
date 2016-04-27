@@ -7,14 +7,14 @@ from dateparser import parse
 class RefundsUtility(ReportUtility):
 
     def __init__(self):
-        ReportUtility.__init__(self, 'bids', rev=True)
+        ReportUtility.__init__(self, 'refunds', rev=True)
         
         self.headers = thresholds_headers(self.thresholds)
         self.tenders = set()
         self.counter = [0 for _ in xrange(len(self.payments))]
-        self.rows = [self.counter, self.payments]
+        self._rows = [self.counter, self.payments]
 
-    def count_row(self, record):
+    def row(self, record):
         # skip lots for now
         if "lot" in record:
             return
@@ -33,32 +33,15 @@ class RefundsUtility(ReportUtility):
         row = []
         for c, v in zip(self.counter, self.payments):
             row.append(c*v)
-        self.rows.append(row)
+        self._rows.append(row)
 
-    def count_rows(self):
+    def rows(self):
         for resp in self.response:
-            self.count_row(resp['value'])
-    
-
-
-
-
-    def run(self):
-        if len(sys.argv) < 3:
-            raise RuntimeError
-        owner = OWNERS[sys.argv[1]]
-        start_key =[owner, parse(sys.argv[2]).isoformat()] 
-        if len(sys.argv) > 3:
-            end_key = [owner, parse(sys.argv[3]).isoformat()]
-        else:
-            end_key = ''
-
-        self.get_response(start_key, end_key)
-        self.count_rows()
+            self.row(resp['value'])
         self.get_rows()
-        file_name = build_name(owner, start_key, end_key, 'refunds')
-
-        write_csv(file_name, self.headers, self.rows)
+        for row in self._rows:
+            yield row
+    
 
 
 def run():

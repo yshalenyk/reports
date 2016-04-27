@@ -28,27 +28,7 @@ class BidsUtility(ReportUtility):
         for resp in self.response:
             yield self.row(resp["value"])
 
-    def run(self):
-        if len(sys.argv) < 3:
-            raise RuntimeError
-        owner = OWNERS[sys.argv[1]]
-        start_key =[owner, parse(sys.argv[2]).isoformat()] 
-        if len(sys.argv) > 3:
-            end_key = [owner, parse(sys.argv[3]).isoformat()]
-        else:
-            end_key = ''
-
-        self.get_response(start_key, end_key)
-        file_name = build_name(owner, start_key, end_key, 'bids')
-
-        write_csv(file_name, self.headers, self.rows())
-
-        
-
-
-        
-        
-        
+       
 def run():
     utility= BidsUtility()
     utility.run()

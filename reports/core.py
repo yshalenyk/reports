@@ -1,12 +1,19 @@
-import couchdbkit
+import couchdb
+import couchdb.design
 import os.path
 import csv
 import os
 import os.path
-from restkit import BasicAuth
+from design import bids_view
 from config import Config
-from couchdbkit.exceptions import ResourceNotFound
+from design import bids
+from argparse import ArgumentParser
+from dateparser import parse
+from couchdb.http import ResourceNotFound
+from couchdb.design import ViewDefinition
 
+
+views = [bids_view]
 
 
 OWNERS = {
@@ -25,28 +32,37 @@ class ReportUtility():
 
     def __init__(self, operation, rev=False):
         self.rev = rev
-        self.config = Config()
+        self.init_from_args()
+        self.headers = None
         self.operation = operation
-        name, uri, user, passwd = self.config.get_db_params()
-
-        if user and passwd:
-            resource = couchdbkit.resource.CouchdbResource(filters=[BasicAuth(user, passwd)])
-            self.server = couchdbkit.Server(uri, resource_instance=resource)
-        else:
-            self.server = couchdbkit.Server(uri)
-        self.get_db(name)
+        name, uri = self.config.get_db_params()
+        self.server = couchdb.Server(uri)
+        if name not in self.server:
+            raise Exception('Database not exists')
+        self.db = self.server[name]
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
-        self.view = 'reports/bids'
+        self.view = 'report/bids'
+
+    def init_from_args(self):
+        parser = ArgumentParser()
+        parser.add_argument('-o', '--owner', dest='owner',  required=True)
+        parser.add_argument('-c', '--config', dest='config')
+        parser.add_argument('-p', '--period', nargs='+', dest='period')
+        args = parser.parse_args()
+        self.owner = OWNERS[args.owner]
+        self.config = Config(args.config)
+        if len(args.period) != 2:
+            raise ValueError('Invalid period')
+        self.start_date = parse(args.period[0]).isoformat()
+        self.end_date = parse(args.period[1]).isoformat()
 
 
-    def get_db(self, db_name):
-        try:
-            db = self.server.get_db(db_name)
-        except ResourceNotFound:
-            self.config.logger.info("Database not esists!")
-            raise
-        self.db = db
+    def row(self):
+        raise NotImplemented
+
+    def rows(self):
+        raise NotImplemented
 
 
     def get_payment(self, value):
@@ -57,50 +73,57 @@ class ReportUtility():
             index += 1
         return self.payments[-1]
 
-    def get_response(self, startkey='', endkey=''):
-        if not startkey:
-            self.response = self.db.view(self.view).iterator()
-        if endkey:
-            self.response =self.db.view(self.view, startkey=startkey, endkey=endkey).iterator()
-        else:
-            self.response = self.db.view(self.view, startkey=startkey).iterator()
+    def _sync_views(self):
+        ViewDefinition.sync_many(self.db, views)
+        
+        
+
+    def get_response(self):
+        self._sync_views()
+        self.response = self.db.view(self.view,
+                                     startkey=[self.owner, self.start_date],
+                                     endkey=[self.owner, self.end_date])
+
+            
+
+    def out_name(self):
+        name = self.owner + "@" + self.start_date + "--" \
+               + self.end_date +"-"+ self.operation+ ".csv"
+
+        self.put_path = os.path.join(self.config.get_out_path(), name)
+
+    def write_csv(self):
+        if not self.headers:
+            raise ValueError
+        with open(self.put_path, 'w') as out_file:
+            writer = csv.writer(out_file)
+            writer.writerow(self.headers)
+            for row in self.rows():
+                writer.writerow(row)
+
+    def run(self):
+        self.get_response()
+        self.out_name()
+        self.write_csv()
 
 
 
 
-def write_csv(name, headers, rows):
-    with open(name, 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(headers)
-        for row in rows:
-            writer.writerow(row)
 
 
-def build_name(key, start_key, end_key, procedure):
-    if end_key:
-        end_date = "--" + end_key[1]
-    else:
-        end_date = ''
-    if start_key:
-        start_date = start_key[1]
-    name = key + "." + start_date + end_date +"-"+ procedure+ ".csv"
-    if not os.path.exists("release/"):
-        os.mkdir("release/")
-    return "release/" + name
-
-def thresholds_headers(thold):
-    prev_th = None
+def thresholds_headers(thresholds):
+    prev_threshold = None
     result = []
-    thrash = []
-    for i in thold:
-        thrash.append(str(i/1000))
-    for th in thrash:
-        if not prev_th:
-            result.append("<= " + th)
+    threshold = []
+    for t in thresholds:
+        threshold.append(str(t/1000))
+    for t in threshold:
+        if not prev_threshold:
+            result.append("<= " + t)
         else:
-            result.append(">" + prev_th + "<=" + th)
-        prev_th = th
-    result.append(">" + thrash[-1])
+            result.append(">" + prev_threshold + "<=" + t)
+        prev_threshold = t
+    result.append(">" + threshold[-1])
     return result
 
 
