@@ -9,7 +9,7 @@ bids = '''function(doc) {
 
         return owners[Math.floor(Math.random() * owners.length)];
     }
-    var id = data.id;
+    var id = data._id;
 
 
     var find_bid_by_lot = function(bids, id) {
