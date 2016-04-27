@@ -35,11 +35,7 @@ class ReportUtility():
         self.headers = None
         self.operation = operation
     def init_from_args(self, owner, period, config=None):
-        if owner in OWNERS:
-            self.owner = OWNERS[owner]
-        else:
-            self.owner = owner
-        self.owner = OWNERS[owner]
+        self.owner = owner
         self.config = Config(config)
         if len(period) != 2:
             raise ValueError('Invalid period')
