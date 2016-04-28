@@ -4,8 +4,9 @@ import os.path
 import csv
 import os
 import os.path
+import sys
 from design import bids_all
-from config import Config
+from config import Config, create_db_url
 from design import bids_all, bids_date
 
 from argparse import ArgumentParser
@@ -48,14 +49,33 @@ class ReportUtility():
             if len(period) == 2:
                 self.start_date = parse(period[0]).isoformat()
                 self.end_date = parse(period[1]).isoformat()
-        name, uri = self.config.get_db_params()
-        self.server = couchdb.Server(uri)
-        if name not in self.server:
-            raise Exception('Database not exists')
-        self.db = self.server[name]
+        self.get_db_connection()
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
         self.view_date = 'report/bids_date'
+
+    def get_db_connection(self):
+        host = self.config.get_option('db', 'host')
+        port = self.config.get_option('db', 'port')
+        user_name = self.config.get_option('user', 'username')
+        user_password = self.config.get_option('user', 'password')
+
+        couch_url = create_db_url(host, port, user_name, user_password)
+
+        db_name = self.config.get_option('db', 'name')
+        server = couchdb.Server(couch_url)
+
+        try:
+            self.db = server[db_name]
+        except ResourceNotFound:
+            print "run init script!"
+            sys.exit(1)
+
+
+
+
+
+
 
 
 
