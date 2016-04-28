@@ -5,6 +5,7 @@ from setuptools import setup
 install_requires = [
     'couchdb>=1.0.1',
     'dateparser>=0.3.4',
+    'pbkdf2'
 ]
 
 
@@ -20,6 +21,7 @@ setup(
             'tenders = reports.tenders:run',
             'refunds = reports.refunds:run',
             'invoices = reports.invoices:run',
+            'init = reports.db_init:run',
         ]
     },
     install_requires=install_requires

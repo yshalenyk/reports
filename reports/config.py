@@ -57,3 +57,17 @@ class Config():
 
     def get_out_path(self):
         return self.get_option('out', 'out_dir')
+
+
+
+def create_db_url(host, port, user, passwd):
+    if user and passwd:
+        up = user + ':' + passwd + '@'
+    else:
+        up = ''
+    url = 'http://' + up + host + ':' + port
+    return url
+
+
+if __name__ == '__main__':
+    print create_db_url('127.0.0.1', '5984', '', '')

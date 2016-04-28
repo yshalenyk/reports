@@ -4,16 +4,17 @@ import os.path
 import csv
 import os
 import os.path
-from design import bids_view
+from design import bids_all
 from config import Config
-from design import bids
+from design import bids_all, bids_date
+
 from argparse import ArgumentParser
 from dateparser import parse
 from couchdb.http import ResourceNotFound
 from couchdb.design import ViewDefinition
 
 
-views = [bids_view]
+views = [bids_date]
 
 
 OWNERS = {
@@ -34,13 +35,19 @@ class ReportUtility():
         self.rev = rev
         self.headers = None
         self.operation = operation
+
     def init_from_args(self, owner, period, config=None):
         self.owner = owner
         self.config = Config(config)
-        if len(period) != 2:
-            raise ValueError('Invalid period')
-        self.start_date = parse(period[0]).isoformat()
-        self.end_date = parse(period[1]).isoformat()
+        self.start_date = ''
+        self.end_date = ''
+
+        if period:
+            if len(period) == 1:
+                self.start_date = parse(period[0]).isoformat()
+            if len(period) == 2:
+                self.start_date = parse(period[0]).isoformat()
+                self.end_date = parse(period[1]).isoformat()
         name, uri = self.config.get_db_params()
         self.server = couchdb.Server(uri)
         if name not in self.server:
@@ -48,7 +55,7 @@ class ReportUtility():
         self.db = self.server[name]
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
-        self.view = 'report/bids'
+        self.view_date = 'report/bids_date'
 
 
 
@@ -74,10 +81,19 @@ class ReportUtility():
 
     def get_response(self):
         self._sync_views()
-        self.response = self.db.view(self.view,
-                                     startkey=[self.owner, self.start_date],
-                                     endkey=[self.owner, self.end_date])
 
+        response = self.db.view(self.view_date)
+        
+
+        if not self.start_date and  not self.end_date:
+            self.response = [row for row in response if row['key'][0] == self.owner] 
+        elif self.start_date and not self.end_date:
+
+            res = [row for row in response if row['key'][0] == self.owner and row['key'][1] > self.start_date]
+            self.response = res
+        else:
+            res = [row for row in response if row['key'][0] == self.owner and row['key'][1] > self.start_date and row['key'][1] < self.end_date]
+            self.response = res
             
 
     def out_name(self):
@@ -124,7 +140,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('-o', '--owner', dest='owner',  required=True)
     parser.add_argument('-c', '--config', dest='config', required=False, default='~/.config/reports/reports.ini')
-    parser.add_argument('-p', '--period', nargs='+', dest='period')
+    parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
     args = parser.parse_args()
     return args.owner.strip(), args.period, args.config
    
