@@ -9,6 +9,7 @@ class BidsUtility(ReportUtility):
         ReportUtility.__init__(self, 'bids')
         
         self.headers = [u"tender", u"lot", u"value", u"bid", u"bill"]
+	self.view = 'report/bids_owner_date' 
 
 
     def row(self, record):

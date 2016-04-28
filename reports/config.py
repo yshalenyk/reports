@@ -12,7 +12,6 @@ class Config():
         self.config = ConfigParser()
         self.config.read(path)
         self.init_logger()
-        self.get_db_params()
 
     def init_logger(self):
         log_file = self.get_option('loggers', 'log_file')
@@ -37,11 +36,6 @@ class Config():
 
 
 
-    def get_db_params(self):
-        db_name = self.get_option('db', 'name') 
-        db_schema = self.get_option('db', 'uri')
-        return db_name, db_schema
-
 
     def get_thresholds(self):
         t = self.config.get('payments', 'thresholds')
@@ -60,12 +54,14 @@ class Config():
 
 
 
-def create_db_url(host, port, user, passwd):
+def create_db_url(host, port, user, passwd, db_name=''):
     if user and passwd:
         up = user + ':' + passwd + '@'
     else:
         up = ''
     url = 'http://' + up + host + ':' + port
+    if db_name:
+        url += '/{}'.format(db_name) 
     return url
 
 

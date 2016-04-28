@@ -6,6 +6,7 @@ class TendersUtility(ReportUtility):
 
     def __init__(self):
         ReportUtility.__init__(self, 'tenders', rev=True)
+	self.view = 'report/tenders_owner_date'
         
         self.headers = ["tender", "value", "bill"]
         self.tenders = set()
@@ -14,10 +15,6 @@ class TendersUtility(ReportUtility):
         row = []
         id = record["tender"]
 
-        #temporarily skip lots
-        if "lot" in record:
-            return None
-        # --------------
         if id  not in self.tenders:
             self.tenders.add(id)
             row.append(id)

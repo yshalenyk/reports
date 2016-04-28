@@ -9,12 +9,9 @@ class RefundsUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'refunds', rev=True)
         self.tenders = set()
-        
+	self.view = 'report/tenders_owner_date'
+
     def row(self, record):
-        # skip lots for now
-        if "lot" in record:
-            return
-        #-------------------- 
         value = record["value"]
         id = record["tender"]
         if id not in self.tenders:

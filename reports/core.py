@@ -5,9 +5,8 @@ import csv
 import os
 import os.path
 import sys
-from design import bids_all
 from config import Config, create_db_url
-from design import bids_all, bids_date
+from design import bids_owner_date, tenders_owner_date
 
 from argparse import ArgumentParser
 from dateparser import parse
@@ -15,7 +14,8 @@ from couchdb.http import ResourceNotFound
 from couchdb.design import ViewDefinition
 
 
-views = [bids_date]
+views = [bids_owner_date, tenders_owner_date]
+
 
 
 OWNERS = {
@@ -52,7 +52,6 @@ class ReportUtility():
         self.get_db_connection()
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
-        self.view_date = 'report/bids_date'
 
     def get_db_connection(self):
         host = self.config.get_option('db', 'host')
@@ -60,17 +59,16 @@ class ReportUtility():
         user_name = self.config.get_option('user', 'username')
         user_password = self.config.get_option('user', 'password')
 
-        couch_url = create_db_url(host, port, user_name, user_password)
-
         db_name = self.config.get_option('db', 'name')
-        server = couchdb.Server(couch_url)
+        couch_url = create_db_url(host, port, user_name, user_password, db_name)
 
-        try:
-            self.db = server[db_name]
-        except ResourceNotFound:
-            print "run init script!"
-            sys.exit(1)
+        self.db = couchdb.Database(couch_url)
 
+        a_name = self.config.get_option('admin', 'username')
+        a_password = self.config.get_option('admin', 'password')
+
+
+	self.adb = couchdb.Database(create_db_url(host, port, a_name, a_password, db_name))
 
 
 
@@ -95,14 +93,18 @@ class ReportUtility():
         return self.payments[-1]
 
     def _sync_views(self):
-        ViewDefinition.sync_many(self.db, views)
+	
+        ViewDefinition.sync_many(self.adb, views)
         
         
 
     def get_response(self):
         self._sync_views()
 
-        response = self.db.view(self.view_date)
+	if not self.view:
+	    raise NotImplemented
+
+        response = self.db.view(self.view)
         
 
         if not self.start_date and  not self.end_date:
