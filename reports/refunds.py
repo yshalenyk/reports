@@ -14,6 +14,8 @@ class RefundsUtility(ReportUtility):
     def row(self, record):
         value = record["value"]
         id = record["tender"]
+        if record[u'currency'] not in [u'UAH']:
+            return 
         if id not in self.tenders:
             self.tenders.add(id)
             payment = self.get_payment(float(value))

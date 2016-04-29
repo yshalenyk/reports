@@ -14,6 +14,9 @@ class InvoicesUtility(ReportUtility):
 
     def row(self, record):
         value = record["value"]
+
+        if record[u'currency'] not in [u'UAH']:
+            return
         payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
