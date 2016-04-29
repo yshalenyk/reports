@@ -73,7 +73,7 @@ function(doc) {
       } else {
         var result = {
           tender: data._id,
-          value: data.value,
+          value: data.value.amount,
           kind: kind,
           datemodified: data.datemodified,
         }
