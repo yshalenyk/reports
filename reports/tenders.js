@@ -58,6 +58,9 @@ function(doc) {
 
         data.lots.forEach(function(lot) {
           if (lot.id === lot_id) {
+            if (lot.value.currency !== "UAH") {
+                return;
+            }
             value = lot.value.amount;
           }
         });
@@ -71,6 +74,9 @@ function(doc) {
         }
         emit([owner, date], result);
       } else {
+        if (data.value.currency !== "UAH") {
+            return;
+        }
         var result = {
           tender: data._id,
           value: data.value.amount,
