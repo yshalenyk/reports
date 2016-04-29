@@ -104,18 +104,12 @@ class ReportUtility():
 	if not self.view:
 	    raise NotImplemented
 
-        response = self.db.view(self.view)
-        
-
         if not self.start_date and  not self.end_date:
-            self.response = [row for row in response if row['key'][0] == self.owner] 
+            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, ""), endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")) 
         elif self.start_date and not self.end_date:
-
-            res = [row for row in response if row['key'][0] == self.owner and row['key'][1] > self.start_date]
-            self.response = res
+            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, self.start_date), endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00"))
         else:
-            res = [row for row in response if row['key'][0] == self.owner and row['key'][1] > self.start_date and row['key'][1] < self.end_date]
-            self.response = res
+            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, self.start_date), endkey=(self.owner, self.end_date))
             
 
     def out_name(self):
