@@ -39,26 +39,26 @@ function(doc) {
     }
 
     var dateModified = data.dateModified;
-
     var owner = data.owner;
 
-    data.contracts.forEach(function(contract) {
+    (data.contracts||[]).forEach(function(contract) {
       if (contract.status !== 'active') {
         return;
       }
       var date = max_date(contract);
       if ('lots' in data) {
         var award_id = contract.awardID;
-
+        var lot_id = '';
+        var value = '';
         data.awards.forEach(function(award) {
           if (award.id === award_id) {
-            var lot_id = award.lotID;
+            lot_id = award.lotID;
           }
         });
 
         data.lots.forEach(function(lot) {
           if (lot.id === lot_id) {
-            var value = lot.value.amount;
+            value = lot.value.amount;
           }
         });
 
