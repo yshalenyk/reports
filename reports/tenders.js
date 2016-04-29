@@ -50,6 +50,7 @@ function(doc) {
         var award_id = contract.awardID;
         var lot_id = '';
         var value = '';
+        var currency = '';
         data.awards.forEach(function(award) {
           if (award.id === award_id) {
             lot_id = award.lotID;
@@ -58,21 +59,19 @@ function(doc) {
 
         data.lots.forEach(function(lot) {
           if (lot.id === lot_id) {
-            if (lot.value.currency !== "UAH") {
-                return;
-            }
             value = lot.value.amount;
+            currency = lot.value.currency;
           }
         });
 
-        var result = {
+        emit([owner, date], {
           tender: data._id,
           lot: lot_id,
           value: value,
+          currency: currency,
           kind: kind,
           datemodified: data.datemodified,
-        }
-        emit([owner, date], result);
+        });
       } else {
         if (data.value.currency !== "UAH") {
             return;
@@ -80,6 +79,7 @@ function(doc) {
         var result = {
           tender: data._id,
           value: data.value.amount,
+          currency: data.value.currency,
           kind: kind,
           datemodified: data.datemodified,
         }

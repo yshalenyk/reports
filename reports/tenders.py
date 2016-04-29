@@ -8,7 +8,7 @@ class TendersUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'tenders', rev=True)
         self.view = 'report/tenders_owner_date'
-        self.headers = ["tender", "lot", "value", "bill", "kind"]
+        self.headers = ["tender", "lot", "value", "currency", "bill", "kind"]
         self.tenders = set()
 
     def row(self, record):
@@ -21,6 +21,7 @@ class TendersUtility(ReportUtility):
             row.append(record.get("lot", ""))
             value = record["value"]
             row.append(value)
+            row.append(record.get('currency', ''))
             row.append(self.get_payment(float(value)))
             row.append(record["kind"])
             return row

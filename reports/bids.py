@@ -8,8 +8,8 @@ class BidsUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'bids')
         
-        self.headers = [u"tender", u"lot", u"value", u"bid", u"bill"]
-	self.view = 'report/bids_owner_date' 
+        self.headers = [u"tender", u"lot", u"value", u"currency", u"bid", u"bill"]
+        self.view = 'report/bids_owner_date' 
 
 
     def row(self, record):

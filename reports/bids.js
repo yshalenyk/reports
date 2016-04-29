@@ -33,30 +33,26 @@ function(doc) {
           var bids_filtered = filter_bids(data.bids);
           var bids = find_bid_by_lot(bids_filtered, lot_id);
           for (var bid in bids) {
-            if (lot.value.currency !== "UAH") {
-                return;
-            }
             var owner = bids[bid].owner;
-            result["tender"] = id;
-            result["lot"] = lot_id;
-            result["value"] = lot.value.amount;
-            result["bid"] = bids[bid].id;
-            emit([owner, bid.date], result);
+            emit([owner, bid.date], {
+                tender: id,
+                lot: lot_id,
+                value: lot.value.amount,
+                currency: lot.value.currency,
+                bid: bids[bid].id,
+            })
 
           }
 
         });
       } else if ("bids" in data) {
-        if (data.value.currency !== "UAH") {
-            return;
-        }
-        var value = data.value.amount;
         var bids = filter_bids(data.bids);
         bids.forEach(function(bid) {
             var owner = bid.owner;
             emit([owner, bid.date], {
                 tender: id,
-                value: value,
+                value: data.value.amount,
+                currency: data.value.currency,
                 bid: bid.id,
             })
         });
