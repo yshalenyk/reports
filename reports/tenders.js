@@ -1,6 +1,6 @@
 function(doc) {
-  var startDate = new Date((doc.enquiryPeriod||{}).startDate);
-  if (startDate < (new Date("2016-04-01T00:00+0300"))) {
+  var startDate = (doc.enquiryPeriod||{}).startDate;
+  if ( (startDate== null) || (startDate < "2016-04-01")) {
     return;
   }
   if (!(doc.procurementMethod === "open")) {
