@@ -32,14 +32,15 @@ function(doc) {
           var lot_id = lot.id;
           var bids_filtered = filter_bids(data.bids);
           var bids = find_bid_by_lot(bids_filtered, lot_id);
-          for (var bid in bids) {
-            var owner = bids[bid].owner;
+          for (var bid_id in bids) {
+            var bid = bids[bid_id]
+            var owner = bid.owner;
             emit([owner, bid.date], {
                 tender: id,
                 lot: lot_id,
                 value: lot.value.amount,
                 currency: lot.value.currency,
-                bid: bids[bid].id,
+                bid: bid.id,
             })
 
           }
