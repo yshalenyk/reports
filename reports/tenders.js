@@ -73,9 +73,6 @@ function(doc) {
           datemodified: data.datemodified,
         });
       } else {
-        if (data.value.currency !== "UAH") {
-            return;
-        }
         var result = {
           tender: data._id,
           value: data.value.amount,
@@ -83,7 +80,13 @@ function(doc) {
           kind: kind,
           datemodified: data.datemodified,
         }
-        emit([owner, date], result);
+        emit([owner, date], {
+          tender: data._id,
+          value: data.value.amount,
+          currency: data.value.currency,
+          kind: kind,
+          datemodified: data.datemodified,
+        });
       }
     });
   }
