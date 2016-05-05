@@ -26,9 +26,18 @@ function(doc) {
   var emit_results = function(data) {
 
     var date = (data.qualificationPeriod || {}).startDate || (data.awardPeriod || {}).startDate || null;
+    var bids_start_date = data.tenderPeriod.startDate || null;
     if ((date) && (data.procurementMethod === "open") && (data.mode !== "test")) {
-      if (("bids" in data) && ("lots" in data)) {
-        data.lots.forEach(function(lot) {
+        if (("bids" in data) && ("lots" in data)) {
+            var audits =[];
+            data.lots.forEach(function(lot) {
+            lot.documents.forEach(function(d){
+                if (d.title.match(re)) {
+                    audits.push(d);
+                }
+            });
+
+
           var lot_id = lot.id;
           var bids_filtered = filter_bids(data.bids);
           var bids = find_bid_by_lot(bids_filtered, lot_id);
@@ -41,6 +50,7 @@ function(doc) {
                 value: lot.value.amount,
                 currency: lot.value.currency,
                 bid: bid.id,
+                audits: audits,
             })
 
           }
@@ -48,6 +58,13 @@ function(doc) {
         });
       } else if ("bids" in data) {
         var bids = filter_bids(data.bids);
+        var re = /audit/;
+        var audits = [];
+        data.documents.forEach(function(d){
+            if (d.title.match(re)) {
+                audits.push(d);
+            }
+        });
         bids.forEach(function(bid) {
             var owner = bid.owner;
             emit([owner, bid.date], {
@@ -55,6 +72,7 @@ function(doc) {
                 value: data.value.amount,
                 currency: data.value.currency,
                 bid: bid.id,
+                audits: audits,
             })
         });
 
