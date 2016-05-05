@@ -35,7 +35,7 @@ class Config():
         return opt
 
     def get_api_url(self):
-        return self.get_option('api', 'url') + self.get_option('api', 'varsion') 
+        return self.get_option('api', 'url') + self.get_option('api', 'version') 
 
 
 

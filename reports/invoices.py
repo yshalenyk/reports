@@ -10,7 +10,7 @@ class InvoicesUtility(ReportUtility):
 
     def __init__(self):
         ReportUtility.__init__(self, 'invoices')
-	self.view = 'report/bids_owner_date'        
+	    self.view = 'report/bids_owner_date'        
         self.skip_bids = set()
 
 
