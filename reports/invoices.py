@@ -1,43 +1,53 @@
 from core import *
-import sys
 import yaml
 import requests
-from dateparser import parse
+import requests_cache
 
+requests_cache.install_cache('audit_cache')
 
 
 class InvoicesUtility(ReportUtility):
 
     def __init__(self):
-        ReportUtility.__init__(self, 'invoices')
-        self.view = 'report/bids_owner_date'        
+        super(InvoicesUtility, self).__init__(self, 'invoices')
+        self.view = 'report/bids_owner_date'
         self.skip_bids = set()
 
+    def bid_date_valid(self, bid_id, audit):
+        if bid_id in self.skip_bids or not audit:
+            self.config.logger.info('Skipped cached early bid: %s', bid_id)
+            return False
+        try:
+            yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
+            initial_bids = yfile['timeline']['auction_start']['initial_bids']
+            for bid in initial_bids:
+                if bid['date'] < "2016-04-01":
+                    self.skip_bids.add(bid['bidder'])
+        except Exception as e:
+            self.config.logger.error('falied to parse audit file. error: {}'.format(repr(e)))
+
+        if bid_id in self.skip_bids:
+            self.config.logger.info('Skipped fetched early bid: %s', bid_id)
+            return False
+        return True
 
     def row(self, record):
         value = record["value"]
-        audit = record.get(u'audits', '')
-        if audit:
-           yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
-           initial_bids = yfile['timeline']['auction_start']['initial_bids']
-           for bid in initial_bids:
-               if bid['date'] < "2016-04-01T00:00+0300":
-                  self.skip_bids.add(bid['bidder'])
-
+        bid = record["bid"]
+        if record.get('tender_start_date', '') < "2016-04-01" and \
+                not self.bid_date_valid(bid, record.get(u'audits', '')):
+            return
         if record[u'currency'] not in [u'UAH']:
             return
-        if record[u'bid']  in self.skip_bids:
-            return
-       	payment = self.get_payment(float(value))
+        payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
                 self.counter[i] += 1
 
-       
     def get_rows(self):
         row = []
         for c, v in zip(self.counter, self.payments):
-            row.append(c*v)
+            row.append(c * v)
         self._rows.append(row)
 
     def rows(self):
@@ -46,19 +56,16 @@ class InvoicesUtility(ReportUtility):
         self.get_rows()
         for row in self._rows:
             yield row
-        
-
 
 
 def run():
-    utility= InvoicesUtility()
+    utility = InvoicesUtility()
     owner, period, config = parse_args()
     utility.init_from_args(owner, period, config)
     utility.headers = thresholds_headers(utility.thresholds)
     utility.counter = [0 for _ in xrange(len(utility.payments))]
     utility._rows = [utility.counter, utility.payments]
     utility.run()
- 
 
 
 if __name__ == "__main__":
