@@ -35,7 +35,10 @@ class Config():
         return opt
 
     def get_api_url(self):
-        return self.get_option('api', 'url') + self.get_option('api', 'version') 
+        host = self.get_option('api', 'host')
+        ver = self.get_option('api', 'version')
+        url = host + '/api/{}'.format(ver)
+        return url 
 
 
 

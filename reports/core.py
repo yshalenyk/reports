@@ -53,15 +53,7 @@ class ReportUtility():
 
         a_name = self.config.get_option('admin', 'username')
         a_password = self.config.get_option('admin', 'password')
-
-
-	self.adb = couchdb.Database(create_db_url(host, port, a_name, a_password, db_name))
-
-
-
-
-
-
+        self.adb = couchdb.Database(create_db_url(host, port, a_name, a_password, db_name))
 
 
     def row(self):
