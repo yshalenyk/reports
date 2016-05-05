@@ -26,7 +26,6 @@ function(doc) {
   var emit_results = function(data) {
 
     var date = (data.qualificationPeriod || {}).startDate || (data.awardPeriod || {}).startDate || null;
-    var bids_start_date = data.tenderPeriod.startDate || null;
     if ((date) && (data.procurementMethod === "open") && (data.mode !== "test")) {
         if (("bids" in data) && ("lots" in data)) {
             var audits =[];
