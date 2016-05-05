@@ -33,10 +33,18 @@ function(doc) {
             data.lots.forEach(function(lot) {
             lot.documents.forEach(function(d){
                 if (d.title.match(re)) {
-                    audits.push(d);
+                    if (audits.length > 0) {
+                        if (audits[0].dateModified > d.dateModified) {
+                             audits.pop();
+                             audits.push(d)
+                        }
+                    } else {
+                    	audits.push(d);
+                    }
                 }
             });
-
+          
+          
 
           var lot_id = lot.id;
           var bids_filtered = filter_bids(data.bids);
@@ -50,7 +58,7 @@ function(doc) {
                 value: lot.value.amount,
                 currency: lot.value.currency,
                 bid: bid.id,
-                audits: audits,
+                audits: audits[0],
             })
 
           }
@@ -72,7 +80,7 @@ function(doc) {
                 value: data.value.amount,
                 currency: data.value.currency,
                 bid: bid.id,
-                audits: audits,
+                audits: audits[0],
             })
         });
 

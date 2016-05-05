@@ -1,5 +1,7 @@
 from core import *
 import sys
+import yaml
+import requests
 from dateparser import parse
 
 
@@ -10,13 +12,24 @@ class BidsUtility(ReportUtility):
         
         self.headers = [u"tender", u"lot", u"value", u"currency", u"bid", u"bill"]
         self.view = 'report/bids_owner_date' 
+        self.skip_bids = set()
 
 
     def row(self, record):
         row = []
+        audit = record.get(u'audits', '')
+        if audit:
+           yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
+           initial_bids = yfile['timeline']['auction_start']['initial_bids']
+           for bid in initial_bids:
+               if bid['date'] < "2016-04-01T00:00+0300":
+                  self.skip_bids.add(bid['bidder'])
         for k in self.headers[:-1]:
             try:
                 cell = record[k]
+                if k == u'bid':
+                    if cell in self.skip_bids:
+                        return None
                 if k == u'value':
                     bill = self.get_payment(float(cell))
                 row.append(cell)
@@ -27,7 +40,9 @@ class BidsUtility(ReportUtility):
 
     def rows(self):
         for resp in self.response:
-            yield self.row(resp["value"])
+            row = self.row(resp["value"])
+            if row:
+                yield row 
 
        
 def run():

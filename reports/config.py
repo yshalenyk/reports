@@ -34,6 +34,9 @@ class Config():
             sys.exit(1)
         return opt
 
+    def get_api_url(self):
+        return self.get_option('api', 'url') + self.get_option('api', 'varsion') 
+
 
 
 

@@ -52,6 +52,7 @@ class ReportUtility():
         self.get_db_connection()
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
+        self.api_url = self.config.get_api_url()
 
     def get_db_connection(self):
         host = self.config.get_option('db', 'host')

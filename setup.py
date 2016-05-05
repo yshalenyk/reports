@@ -5,7 +5,8 @@ from setuptools import setup
 install_requires = [
     'couchdb>=1.0.1',
     'dateparser>=0.3.4',
-    'pbkdf2'
+    'pbkdf2',
+    'requests'
 ]
 
 
