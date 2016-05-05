@@ -19,11 +19,15 @@ class BidsUtility(ReportUtility):
         row = []
         audit = record.get(u'audits', '')
         if audit:
-           yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
-           initial_bids = yfile['timeline']['auction_start']['initial_bids']
-           for bid in initial_bids:
-               if bid['date'] < "2016-04-01T00:00+0300":
-                  self.skip_bids.add(bid['bidder'])
+            try:
+               yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
+               initial_bids = yfile['timeline']['auction_start']['initial_bids']
+               for bid in initial_bids:
+                   if bid['date'] < "2016-04-01T00:00+0300":
+                      self.skip_bids.add(bid['bidder'])
+            except Exception:
+                self.config.logger('falied to parse audit file')
+                
         for k in self.headers[:-1]:
             try:
                 cell = record[k]

@@ -16,20 +16,6 @@ from couchdb.design import ViewDefinition
 
 views = [bids_owner_date, tenders_owner_date]
 
-
-
-OWNERS = {
-    "smarttender": "it.ua",
-    "dzo": "netcast.com.ua",
-    "privatmarket": "privatmarket.ua",
-    "prom": "prom.ua",
-    "etender": "e-tender.biz",
-    "publicbid": "public-bid.com.ua",
-    "newtend": "newtend.com",
-}
-
-
-
 class ReportUtility():
 
     def __init__(self, operation, rev=False):

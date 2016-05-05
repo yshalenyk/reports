@@ -31,7 +31,7 @@ function(doc) {
         if (("bids" in data) && ("lots" in data)) {
             var audits =[];
             data.lots.forEach(function(lot) {
-            lot.documents.forEach(function(d){
+            (lot.documents || []).forEach(function(d){
                 if (d.title.match(re)) {
                     if (audits.length > 0) {
                         if (audits[0].dateModified > d.dateModified) {
@@ -68,10 +68,17 @@ function(doc) {
         var bids = filter_bids(data.bids);
         var re = /audit/;
         var audits = [];
-        data.documents.forEach(function(d){
+        (data.documents || []).forEach(function(d){
             if (d.title.match(re)) {
-                audits.push(d);
-            }
+                    if (audits.length > 0) {
+                        if (audits[0].dateModified > d.dateModified) {
+                             audits.pop();
+                             audits.push(d)
+                        }
+                    } else {
+                    	audits.push(d);
+                    }
+                }
         });
         bids.forEach(function(bid) {
             var owner = bid.owner;
