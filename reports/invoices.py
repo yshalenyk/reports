@@ -9,7 +9,7 @@ requests_cache.install_cache('audit_cache')
 class InvoicesUtility(ReportUtility):
 
     def __init__(self):
-        super(InvoicesUtility, self).__init__(self, 'invoices')
+        super(InvoicesUtility, self).__init__('invoices')
         self.view = 'report/bids_owner_date'
         self.skip_bids = set()
 

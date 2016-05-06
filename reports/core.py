@@ -4,19 +4,17 @@ import os.path
 import csv
 import os
 import os.path
-import sys
 from config import Config, create_db_url
 from design import bids_owner_date, tenders_owner_date
 
 from argparse import ArgumentParser
 from dateparser import parse
-from couchdb.http import ResourceNotFound
 from couchdb.design import ViewDefinition
 
 
 views = [bids_owner_date, tenders_owner_date]
 
-class ReportUtility():
+class ReportUtility(object):
 
     def __init__(self, operation, rev=False):
         self.rev = rev
@@ -55,13 +53,11 @@ class ReportUtility():
         a_password = self.config.get_option('admin', 'password')
         self.adb = couchdb.Database(create_db_url(host, port, a_name, a_password, db_name))
 
-
     def row(self):
         raise NotImplemented
 
     def rows(self):
         raise NotImplemented
-
 
     def get_payment(self, value):
         index = 0
@@ -72,29 +68,37 @@ class ReportUtility():
         return self.payments[-1]
 
     def _sync_views(self):
-	
+
         ViewDefinition.sync_many(self.adb, views)
-        
-        
 
     def get_response(self):
         self._sync_views()
 
-	if not self.view:
-	    raise NotImplemented
+        if not self.view:
+            raise NotImplemented
 
-        if not self.start_date and  not self.end_date:
-            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, ""), endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")) 
+        if not self.start_date and not self.end_date:
+            self.response = self.db.iterview(
+                self.view, 1000, startkey=(self.owner, ""), endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")
+            )
         elif self.start_date and not self.end_date:
-            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, self.start_date), endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00"))
+            self.response = self.db.iterview(
+                self.view, 1000,
+                startkey=(self.owner, self.start_date),
+                endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")
+            )
         else:
-            self.response = self.db.iterview(self.view, 1000, startkey=(self.owner, self.start_date), endkey=(self.owner, self.end_date))
-            
+            self.response = self.db.iterview(
+                self.view, 1000,
+                startkey=(self.owner, self.start_date),
+                endkey=(self.owner, self.end_date)
+            )
+
 
     def out_name(self):
-        name = self.owner + "@" + self.start_date + "--" \
-               + self.end_date +"-"+ self.operation+ ".csv"
-
+        name = "{}@{}--{}-{}.csv".format(
+            self.owner, self.start_date, self.end_date, self.operation
+        )
         self.put_path = os.path.join(self.config.get_out_path(), name)
 
     def write_csv(self):
@@ -112,16 +116,12 @@ class ReportUtility():
         self.write_csv()
 
 
-
-
-
-
 def thresholds_headers(thresholds):
     prev_threshold = None
     result = []
     threshold = []
     for t in thresholds:
-        threshold.append(str(t/1000))
+        threshold.append(str(t / 1000))
     for t in threshold:
         if not prev_threshold:
             result.append("<= " + t)
@@ -131,11 +131,11 @@ def thresholds_headers(thresholds):
     result.append(">" + threshold[-1])
     return result
 
+
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('-o', '--owner', dest='owner',  required=True)
+    parser.add_argument('-o', '--owner', dest='owner', required=True)
     parser.add_argument('-c', '--config', dest='config', required=False, default='~/.config/reports/reports.ini')
     parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
     args = parser.parse_args()
     return args.owner.strip(), args.period, args.config
-   
