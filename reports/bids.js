@@ -49,7 +49,7 @@ function(doc) {
           for (var bid_id in bids) {
             var bid = bids[bid_id]
             var owner = bid.owner;
-            emit([owner, bid.date], {
+            emit([owner, date, bid.id, lot_id], {
               tender: id,
               lot: lot_id,
               value: lot.value.amount,
@@ -57,7 +57,6 @@ function(doc) {
               bid: bid.id,
               audits: audits[0],
               tender_start_date: data.tenderPeriod.startDate,
-
             })
 
           }
@@ -82,7 +81,7 @@ function(doc) {
         });
         bids.forEach(function(bid) {
           var owner = bid.owner;
-          emit([owner, bid.date], {
+          emit([owner, date, bid.id], {
             tender: id,
             value: data.value.amount,
             currency: data.value.currency,
