@@ -1,6 +1,7 @@
-import sys
-from core import *
-from dateparser import parse
+from core import (
+    ReportUtility,
+    parse_args
+)
 
 
 class TendersUtility(ReportUtility):
@@ -8,22 +9,16 @@ class TendersUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'tenders', rev=True)
         self.view = 'report/tenders_owner_date'
-        self.headers = ["tender", "lot", "value", "currency", "bill", "kind"]
+        self.headers = ["tender", "tenderID", "lot", "currency",
+                        "kind", "value", "bill"]
         self.tenders = set()
 
     def row(self, record):
-        row = []
         id = record["tender"]
-
         if id not in self.tenders:
             self.tenders.add(id)
-            row.append(id)
-            row.append(record.get("lot", ""))
-            value = record["value"]
-            row.append(value)
-            row.append(record.get('currency', ''))
-            row.append(self.get_payment(float(value)))
-            row.append(record["kind"])
+            row = list(record.get(col) for col in self.headers[:-1])
+            row.append(self.get_payment(float(record.get(u'value', 0))))
             return row
 
     def rows(self):
@@ -31,6 +26,7 @@ class TendersUtility(ReportUtility):
             r = self.row(resp['value'])
             if r:
                 yield r
+
 
 def run():
     utility = TendersUtility()

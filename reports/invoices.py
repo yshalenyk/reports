@@ -1,7 +1,12 @@
-from core import *
 import yaml
 import requests
 import requests_cache
+from requests.exceptions import RequestException
+from core import (
+    ReportUtility,
+    parse_args,
+    thresholds_headers,
+)
 
 requests_cache.install_cache('audit_cache')
 
@@ -23,8 +28,12 @@ class InvoicesUtility(ReportUtility):
             for bid in initial_bids:
                 if bid['date'] < "2016-04-01":
                     self.skip_bids.add(bid['bidder'])
-        except Exception as e:
-            self.config.logger.error('falied to parse audit file. error: {}'.format(repr(e)))
+        except RequestException as e:
+            msg = 'Request falied at getting audit file of {0}  bid with {1}'.format(bid_id, e)
+            self.config.logger.error(msg)
+        except KeyError:
+            msg = 'falied to parse audit file of {} bid'.format(bid_id)
+            self.config.logger.error(msg)
 
         if bid_id in self.skip_bids:
             self.config.logger.info('Skipped fetched early bid: %s', bid_id)
