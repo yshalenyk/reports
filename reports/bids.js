@@ -57,6 +57,7 @@ function(doc) {
               bid: bid.id,
               audits: audits[0],
               tender_start_date: data.tenderPeriod.startDate,
+              tenderID: data.tenderID,
             })
 
           }
@@ -88,6 +89,7 @@ function(doc) {
             bid: bid.id,
             audits: audits[0],
             tender_start_date: data.tenderPeriod.startDate,
+            tenderID: data.tenderID,
           })
         });
 

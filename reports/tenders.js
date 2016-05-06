@@ -70,22 +70,17 @@ function(doc) {
           value: value,
           currency: currency,
           kind: kind,
-          datemodified: data.datemodified,
+          datemodified: data.dateModified,
+          tenderID: data.tenderID,
         });
       } else {
-        var result = {
-          tender: data._id,
-          value: data.value.amount,
-          currency: data.value.currency,
-          kind: kind,
-          datemodified: data.datemodified,
-        }
         emit([owner, date], {
           tender: data._id,
           value: data.value.amount,
           currency: data.value.currency,
           kind: kind,
-          datemodified: data.datemodified,
+          datemodified: data.dateModified,
+          tenderID: data.tenderID,
         });
       }
     });
