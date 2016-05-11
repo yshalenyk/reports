@@ -8,6 +8,7 @@ etc/
 develop-eggs/
 src/
 var/
+reports.egg*
 \.\#*
 \#*
 *~
