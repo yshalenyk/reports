@@ -159,5 +159,7 @@ def value_currency_normalize(value, currency, date=''):
         request_url = base_url.format('?json')
     resp = requests.get(request_url).text.encode('utf-8')
     doc = json.loads(resp)
+    if currency == u'RUR':
+        currency = u'RUB'
     rate = filter(lambda x: x[u'cc'] == currency, doc)
     return value * rate[0][u'rate']
