@@ -2,6 +2,7 @@ from reports.core import (
     ReportUtility,
     parse_args,
     thresholds_headers,
+    value_currency_normalize
 )
 
 
@@ -12,11 +13,13 @@ class RefundsUtility(ReportUtility):
         self.tenders = set()
         self.view = 'report/tenders_owner_date'
 
-    def row(self, record):
-        value = record["value"]
+    def row(self, keys, record):
+        value = record.get("value", 0)
         id = record["tender"]
-        if record[u'currency'] not in [u'UAH']:
-            return
+        if record[u'currency'] != u'UAH':
+            value = value_currency_normalize(
+                value, record[u'currency'], keys[1]
+            )
         if id not in self.tenders:
             self.tenders.add(id)
             payment = self.get_payment(float(value))
@@ -32,7 +35,7 @@ class RefundsUtility(ReportUtility):
 
     def rows(self):
         for resp in self.response:
-            self.row(resp['value'])
+            self.row(resp['key'], resp['value'])
         self.get_rows()
         for row in self._rows:
             yield row

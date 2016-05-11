@@ -6,6 +6,7 @@ from reports.core import (
     ReportUtility,
     parse_args,
     thresholds_headers,
+    value_currency_normalize
 )
 
 requests_cache.install_cache('audit_cache')
@@ -41,14 +42,16 @@ class InvoicesUtility(ReportUtility):
             return False
         return True
 
-    def row(self, record):
-        value = record["value"]
+    def row(self, keys, record):
+        value = record.get("value", 0)
         bid = record["bid"]
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
-        if record[u'currency'] not in [u'UAH']:
-            return
+        if record[u'currency'] != u'UAH':
+            value = value_currency_normalize(
+                value, record[u'currency'], keys[1]
+            )
         payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
@@ -62,7 +65,7 @@ class InvoicesUtility(ReportUtility):
 
     def rows(self):
         for resp in self.response:
-            self.row(resp['value'])
+            self.row(resp['key'], resp['value'])
         self.get_rows()
         for row in self._rows:
             yield row

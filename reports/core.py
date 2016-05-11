@@ -4,6 +4,9 @@ import os.path
 import csv
 import os
 import os.path
+import requests
+import requests_cache
+import json
 from config import Config, create_db_url
 from design import bids_owner_date, tenders_owner_date
 from argparse import ArgumentParser
@@ -12,6 +15,8 @@ from couchdb.design import ViewDefinition
 
 
 views = [bids_owner_date, tenders_owner_date]
+
+requests_cache.install_cache('exchange_chache')
 
 
 class ReportUtility(object):
@@ -142,3 +147,17 @@ def parse_args():
     parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
     args = parser.parse_args()
     return args.owner.strip(), args.period, args.config
+
+
+def value_currency_normalize(value, currency, date=''):
+    base_url = 'http://bank.gov.ua/NBUStatService/v1/statdirectory/exchange{}'
+    if date:
+        d = parse(date)
+        date_param = d.strftime('%Y%m%d')
+        request_url = base_url.format('?date={}&json'.format(date_param))
+    else:
+        request_url = base_url.format('?json')
+    resp = requests.get(request_url).text.encode('utf-8')
+    doc = json.loads(resp)
+    rate = filter(lambda x: x[u'cc'] == currency, doc)
+    return value * rate[0][u'rate']
