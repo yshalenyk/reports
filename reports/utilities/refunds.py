@@ -1,4 +1,4 @@
-from core import (
+from reports.core import (
     ReportUtility,
     parse_args,
     thresholds_headers,

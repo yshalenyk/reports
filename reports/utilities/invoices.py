@@ -2,7 +2,7 @@ import yaml
 import requests
 import requests_cache
 from requests.exceptions import RequestException
-from core import (
+from reports.core import (
     ReportUtility,
     parse_args,
     thresholds_headers,
@@ -29,7 +29,8 @@ class InvoicesUtility(ReportUtility):
                 if bid['date'] < "2016-04-01":
                     self.skip_bids.add(bid['bidder'])
         except RequestException as e:
-            msg = 'Request falied at getting audit file of {0}  bid with {1}'.format(bid_id, e)
+            msg = "Request falied at getting audit file"\
+                    "of {0}  bid with {1}".format(bid_id, e)
             self.config.logger.error(msg)
         except KeyError:
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
