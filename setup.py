@@ -17,10 +17,10 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'bids = reports.bids:run',
-            'tenders = reports.tenders:run',
-            'refunds = reports.refunds:run',
-            'invoices = reports.invoices:run',
+            'bids = reports.utilities.bids:run',
+            'tenders = reports.utilities.tenders:run',
+            'refunds = reports.utilities.refunds:run',
+            'invoices = reports.utilities.invoices:run',
             'init = reports.db_init:run',
         ]
     },
