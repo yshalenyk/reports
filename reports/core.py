@@ -13,6 +13,7 @@ from config import Config, create_db_url
 from design import bids_owner_date, tenders_owner_date
 from argparse import ArgumentParser
 from couchdb.design import ViewDefinition
+from logging import getLogger
 
 
 views = [bids_owner_date, tenders_owner_date]
@@ -43,6 +44,7 @@ class ReportUtility(object):
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
         self.api_url = self.config.get_api_url()
+        self.Logger = getLogger(self.operation)
 
     def get_db_connection(self):
         host = self.config.get_option('db', 'host')
@@ -168,5 +170,5 @@ def value_currency_normalize(value, currency, date):
     doc = json.loads(resp)
     if currency == u'RUR':
         currency = u'RUB'
-    rate = filter(lambda x: x[u'cc'] == currency, doc)
-    return value * rate[0][u'rate']
+    rate = filter(lambda x: x[u'cc'] == currency, doc)[0][u'rate']
+    return value * rate, rate

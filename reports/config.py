@@ -1,8 +1,8 @@
-from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 import logging
 import logging.handlers
+import sys
 from logging.config import fileConfig
-
+from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 
 class Config(object):
 
@@ -13,7 +13,6 @@ class Config(object):
 
     def init_logger(self, file_path):
         fileConfig(file_path)
-        self.logger = logging.getLogger()
 
     def get_option(self, section, name):
         try:
