@@ -28,7 +28,7 @@ function(doc) {
       });
     }
     var maxDate = new Date(Math.max.apply(null, dates));
-    return maxDate.toISOString();
+    return maxDate.toISOString().slice(0, 23);
   }
   var emit_result = function(data) {
     var entity = data.procuringEntity;

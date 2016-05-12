@@ -15,23 +15,29 @@ function(doc) {
 
   var filter_bids = function(bids) {
     var res = [];
+    var min_date =  Date.parse("2016-04-01T00:00:00+03:00");
     bids.forEach(function(bid) {
-      if ((["invalid", "deleted"].indexOf(bid.status || "active") === -1) && (bid.date > "2016-04-01")) {
+      var bid_date =  Date.parse(bid.date);
+      if ((["invalid", "deleted"].indexOf(bid.status || "active") === -1) && (+bid_date > +min_date)) {
         res.push(bid);
       }
     });
     return res;
 
   }
-  var emit_results = function(data) {
+  var emit_results = function(tender) {
 
-    var date = (data.qualificationPeriod || {}).startDate || (data.awardPeriod || {}).startDate || null;
-    if ((date) && (data.procurementMethod === "open") && (data.mode !== "test")) {
-      if (("bids" in data) && ("lots" in data)) {
+    var odate = (tender.qualificationPeriod || {}).startDate || (tender.awardPeriod || {}).startDate || null;
+    if (!odate) {
+        return;
+    }
+    var date = (new Date(odate)).toISOString().slice(0, 23);
+    if ((tender.procurementMethod === "open") && (tender.mode !== "test")) {
+      if (("bids" in tender) && ("lots" in tender)) {
         var audits = [];
-        data.lots.forEach(function(lot) {
+        tender.lots.forEach(function(lot) {
           var lot_id = lot.id;
-          (data.documents || []).forEach(function(d) {
+          (tender.documents || []).forEach(function(d) {
             if (d.title.indexOf("audit_" + id + "_" + lot_id) === 0) {
               if (audits.length > 0) {
                 if (audits[0].dateModified > d.dateModified) {
@@ -44,7 +50,7 @@ function(doc) {
               }
             }
           });
-          var bids_filtered = filter_bids(data.bids);
+          var bids_filtered = filter_bids(tender.bids);
           var bids = find_bid_by_lot(bids_filtered, lot_id);
           for (var bid_id in bids) {
             var bid = bids[bid_id]
@@ -56,18 +62,18 @@ function(doc) {
               currency: lot.value.currency,
               bid: bid.id,
               audits: audits[0],
-              tender_start_date: data.tenderPeriod.startDate,
-              tenderID: data.tenderID,
+              tender_start_date: tender.tenderPeriod.startDate,
+              tenderID: tender.tenderID,
             })
 
           }
 
         });
-      } else if ("bids" in data) {
-        var bids = filter_bids(data.bids);
+      } else if ("bids" in tender) {
+        var bids = filter_bids(tender.bids);
         var re = /audit/;
         var audits = [];
-        (data.documents || []).forEach(function(d) {
+        (tender.documents || []).forEach(function(d) {
           if (d.title.match(re)) {
             if (audits.length > 0) {
               if (audits[0].dateModified > d.dateModified) {
@@ -84,12 +90,12 @@ function(doc) {
           var owner = bid.owner;
           emit([owner, date, bid.id], {
             tender: id,
-            value: data.value.amount,
-            currency: data.value.currency,
+            value: tender.value.amount,
+            currency: tender.value.currency,
             bid: bid.id,
             audits: audits[0],
-            tender_start_date: data.tenderPeriod.startDate,
-            tenderID: data.tenderID,
+            tender_start_date: tender.tenderPeriod.startDate,
+            tenderID: tender.tenderID,
           })
         });
 

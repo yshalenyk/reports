@@ -7,10 +7,11 @@ import os.path
 import requests
 import requests_cache
 import json
+import iso8601
+import pytz
 from config import Config, create_db_url
 from design import bids_owner_date, tenders_owner_date
 from argparse import ArgumentParser
-from dateparser import parse
 from couchdb.design import ViewDefinition
 
 
@@ -34,10 +35,10 @@ class ReportUtility(object):
 
         if period:
             if len(period) == 1:
-                self.start_date = parse(period[0]).isoformat()
+                self.start_date = self.convert_date(period[0])
             if len(period) == 2:
-                self.start_date = parse(period[0]).isoformat()
-                self.end_date = parse(period[1]).isoformat()
+                self.start_date = self.convert_date(period[0])
+                self.end_date = self.convert_date(period[1])
         self.get_db_connection()
         self.thresholds = self.config.get_thresholds()
         self.payments = self.config.get_payments(self.rev)
@@ -66,6 +67,13 @@ class ReportUtility(object):
 
     def rows(self):
         raise NotImplemented
+
+    def convert_date(self, date):
+        iso_date = iso8601.parse_date(date)
+        utc_date = iso_date.astimezone(
+            pytz.timezone('UTC')
+        )
+        return utc_date.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     def get_payment(self, value):
         for index, threshold in enumerate(self.thresholds):
@@ -149,15 +157,14 @@ def parse_args():
     return args.owner.strip(), args.period, args.config
 
 
-def value_currency_normalize(value, currency, date=''):
-    base_url = 'http://bank.gov.ua/NBUStatService/v1/statdirectory/exchange{}'
-    if date:
-        d = parse(date)
-        date_param = d.strftime('%Y%m%d')
-        request_url = base_url.format('?date={}&json'.format(date_param))
-    else:
-        request_url = base_url.format('?json')
-    resp = requests.get(request_url).text.encode('utf-8')
+def value_currency_normalize(value, currency, date):
+    if not isinstance(value, (float, int)):
+        raise ValueError
+    base_url = 'http://bank.gov.ua/NBUStatService'\
+               '/v1/statdirectory/exchange?date={}&json'.format(
+                    iso8601.parse_date(date).strftime('%Y%m%d')
+               )
+    resp = requests.get(base_url).text.encode('utf-8')
     doc = json.loads(resp)
     if currency == u'RUR':
         currency = u'RUB'
