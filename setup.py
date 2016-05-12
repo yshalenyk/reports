@@ -6,6 +6,8 @@ install_requires = [
     'pbkdf2',
     'requests',
     'requests_cache',
+    'pytz',
+    'iso8601'
 ]
 
 
