@@ -13,31 +13,31 @@ class TendersUtility(ReportUtility):
         self.headers = ["tender", "tenderID", "lot", "currency",
                         "kind", "value", "bill"]
 
-    def row(self, keys, record):
+    def row(self, record):
         row = list(record.get(col, '') for col in self.headers[:-1])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':
+            old = value
             value, rate = value_currency_normalize(
-                value, record[u'currency'], keys[1]
+                value, record[u'currency'], record[u'startdate']
             )
-            msg = "Changing value by exgange rate {} on {}"\
-                  " for value {} {} in {}".format(
-                        rate, keys[1], value,
-                        record[u'currency'], record['tender']
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
 
         row.append(self.get_payment(value))
-        self.Logger.info(
-            "Bill {} for tender {} with value {}".format(
-                row[-1], row[0], row[5]
+        self.Logger.info("Bill {} for tender {} with value {}".format(
+                row[-1], row[0], value
             )
         )
         return row
 
     def rows(self):
         for resp in self.response:
-            r = self.row(resp['key'], resp['value'])
+            r = self.row(resp['value'])
             if r:
                 yield r
 

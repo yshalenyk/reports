@@ -12,30 +12,32 @@ class RefundsUtility(ReportUtility):
         ReportUtility.__init__(self, 'refunds', rev=True)
         self.view = 'report/tenders_owner_date'
 
-    def row(self, keys, record):
+    def row(self, record):
         value = record.get("value", 0)
         if record[u'currency'] != u'UAH':
+            old = value
             value, rate = value_currency_normalize(
-                value, record[u'currency'], keys[1]
+                value, record[u'currency'],  record[u'startdate']
             )
-            msg = "Changing value by exgange rate {} on {}"\
-                  " for value {} {} in {}".format(
-                        rate, keys[1], value,
-                        record[u'currency'], record['tender']
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
         payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
-                msg = 'Computated bill {} for value {} '\
-                      'in tender {}'.format(payment, value, record['tender'])
+                msg = 'Bill {} for value {} in tender {}'.format(
+                    payment, value, record['tender']
+                )
                 self.Logger.info(msg)
                 self.counter[i] += 1
 
     def rows(self):
         self._rows = [self.counter, self.payments]
         for resp in self.response:
-            self.row(resp['key'], resp['value'])
+            self.row(resp['value'])
         self._rows.append(
             [c*v for c, v in zip(self.counter, self.payments)]
         )

@@ -46,20 +46,21 @@ class InvoicesUtility(ReportUtility):
             return False
         return True
 
-    def row(self, keys, record):
+    def row(self, record):
         value = record.get("value", 0)
         bid = record["bid"]
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
         if record[u'currency'] != u'UAH':
+            old = value
             value, rate = value_currency_normalize(
-                value, record[u'currency'], keys[1]
+                value, record[u'currency'], record[u'startdate']
             )
-            msg = "Changing value by exgange rate {} on {}"\
-                  " for value {} {} in {}".format(
-                        rate, keys[1], value,
-                        record[u'currency'], record['tender']
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
         payment = self.get_payment(float(value))
@@ -73,7 +74,7 @@ class InvoicesUtility(ReportUtility):
     def rows(self):
         self._rows = [self.counter, self.payments]
         for resp in self.response:
-            self.row(resp['key'], resp['value'])
+            self.row(resp['value'])
         self._rows.append(
             [c*v for c, v in zip(self.counter, self.payments)]
         )

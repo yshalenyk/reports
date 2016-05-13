@@ -47,7 +47,7 @@ class BidsUtility(ReportUtility):
             return False
         return True
 
-    def row(self, keys, record):
+    def row(self, record):
         bid = record.get(u'bid', '')
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
@@ -55,27 +55,27 @@ class BidsUtility(ReportUtility):
         row = list(record.get(col, '') for col in self.headers[:-1])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':
+            old = value
             value, rate = value_currency_normalize(
-                value, record[u'currency'], keys[1]
+                value, record[u'currency'], record[u'startdate']
             )
-            msg = "Changing value by exgange rate {} on {}"\
-                  " for value {} {} in {}".format(
-                        rate, keys[1], value,
-                        record[u'currency'], record['tender']
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
-
         row.append(self.get_payment(value))
         self.Logger.info(
             "Bill {} for tender {} with value {}".format(
-                row[-1], row[0], row[3]
+                row[-1], row[0], value
             )
         )
         return row
 
     def rows(self):
         for resp in self.response:
-            row = self.row(resp['key'], resp["value"])
+            row = self.row(resp["value"])
             if row:
                 yield row
 

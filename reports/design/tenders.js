@@ -71,6 +71,7 @@ function(doc) {
           currency: currency,
           kind: kind,
           datemodified: data.dateModified,
+          startdate: startDate,
           tenderID: data.tenderID,
         });
       } else {
@@ -79,6 +80,7 @@ function(doc) {
           value: data.value.amount,
           currency: data.value.currency,
           kind: kind,
+          startdate: startDate,
           datemodified: data.dateModified,
           tenderID: data.tenderID,
         });

@@ -32,6 +32,7 @@ function(doc) {
         return;
     }
     var date = (new Date(odate)).toISOString().slice(0, 23);
+    var startDate = (doc.enquiryPeriod||{}).startDate;
     if ((tender.procurementMethod === "open") && (tender.mode !== "test")) {
       if (("bids" in tender) && ("lots" in tender)) {
         var audits = [];
@@ -46,7 +47,6 @@ function(doc) {
                 }
               } else {
                 audits.push(d);
-
               }
             }
           });
@@ -61,13 +61,12 @@ function(doc) {
               value: lot.value.amount,
               currency: lot.value.currency,
               bid: bid.id,
+              startdate: startDate,
               audits: audits[0],
               tender_start_date: tender.tenderPeriod.startDate,
               tenderID: tender.tenderID,
             })
-
           }
-
         });
       } else if ("bids" in tender) {
         var bids = filter_bids(tender.bids);
@@ -94,11 +93,11 @@ function(doc) {
             currency: tender.value.currency,
             bid: bid.id,
             audits: audits[0],
+            startdate: startDate,
             tender_start_date: tender.tenderPeriod.startDate,
             tenderID: tender.tenderID,
           })
         });
-
       };
     }
   }
