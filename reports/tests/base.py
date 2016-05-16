@@ -1,7 +1,9 @@
+# coding: utf-8
 import unittest
 import couchdb
 import os.path
-from reports.core import ReportUtility
+import mock
+from reports.core import ReportUtility, value_currency_normalize
 from copy import copy
 
 
@@ -75,6 +77,17 @@ class BaseUtilityTest(unittest.TestCase):
             self.assertEqual(
                 self.utility.payments[4], self.utility.get_payment(x))
 
+    @mock.patch('reports.core.requests.get', new=lambda *args, **kwargs: MockCurrencyResponce())
+    def test_value_normalization(self):
+        self.assertRaises(ValueError, value_currency_normalize, '1', u'EUR', '2015-10-11')
+        value_valid = 10
+        currencies = [u'USD', u'RUR', u'EUR']
+        for curr in currencies:
+            value, rate = value_currency_normalize(value_valid, curr, '2015-10-11')
+            self.assertEqual(20, value)
+
+
+
     def tearDown(self):
         del self.server[self.db_name]
 
@@ -98,3 +111,17 @@ class BaseTenderUtilityTest(BaseUtilityTest):
     def setUp(self):
         super(BaseTenderUtilityTest, self).setUp()
         self.utility.view = 'report/tenders_owner_date'
+
+
+class MockCurrencyResponce(object):
+    text = u'''
+    [{"r030":36,"txt":"Австралійський долар","rate":2,"cc":"AUD","exchangedate":"16.05.2016"},
+     {"r030":643,"txt":"Російський рубль","rate":2,"cc":"RUB","exchangedate":"16.05.2016"},
+     {"r030":978,"txt":"Євро","rate":2,"cc":"EUR","exchangedate":"16.05.2016"},
+     {"r030":974,"txt":"Бiлоруський рубль","rate":2,"cc":"BYR","exchangedate":"16.05.2016"},
+     {"r030":952,"txt":"Франк CFA-BCEAO","rate":2,"cc":"XOF","exchangedate":"16.05.2016"},
+     {"r030":840,"txt":"Долар США","rate":2,"cc":"USD","exchangedate":"16.05.2016"},
+     {"r030":826,"txt":"Фунт стерлінгів","rate":2,"cc":"GBP","exchangedate":"16.05.2016"},
+     {"r030":756,"txt":"Швейцарський франк","rate":2,"cc":"CHF","exchangedate":"16.05.2016"},
+     {"r030":752,"txt":"Шведська крона","rate":2,"cc":"SEK","exchangedate":"16.05.2016"}]
+    '''
