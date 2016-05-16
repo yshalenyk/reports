@@ -28,7 +28,7 @@ function(doc) {
       });
     }
     var maxDate = new Date(Math.max.apply(null, dates));
-    return maxDate.toISOString();
+    return maxDate.toISOString().slice(0, 23);
   }
   var emit_result = function(data) {
     var entity = data.procuringEntity;
@@ -71,6 +71,7 @@ function(doc) {
           currency: currency,
           kind: kind,
           datemodified: data.dateModified,
+          startdate: startDate,
           tenderID: data.tenderID,
         });
       } else {
@@ -79,6 +80,7 @@ function(doc) {
           value: data.value.amount,
           currency: data.value.currency,
           kind: kind,
+          startdate: startDate,
           datemodified: data.dateModified,
           tenderID: data.tenderID,
         });

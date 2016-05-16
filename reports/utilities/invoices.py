@@ -2,10 +2,12 @@ import yaml
 import requests
 import requests_cache
 from requests.exceptions import RequestException
-from core import (
+from yaml.scanner import ScannerError
+from reports.core import (
     ReportUtility,
     parse_args,
     thresholds_headers,
+    value_currency_normalize
 )
 
 requests_cache.install_cache('audit_cache')
@@ -29,40 +31,53 @@ class InvoicesUtility(ReportUtility):
                 if bid['date'] < "2016-04-01":
                     self.skip_bids.add(bid['bidder'])
         except RequestException as e:
-            msg = 'Request falied at getting audit file of {0}  bid with {1}'.format(bid_id, e)
-            self.config.logger.error(msg)
+            msg = "Request falied at getting audit file"\
+                    "of {0}  bid with {1}".format(bid_id, e)
+            self.logger.info(msg)
+        except ScannerError:
+            msg = 'falied to scan audit file of {} bid'.format(bid_id)
+            self.Logger.error(msg)
         except KeyError:
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.config.logger.error(msg)
+            self.logger.info(msg)
 
         if bid_id in self.skip_bids:
-            self.config.logger.info('Skipped fetched early bid: %s', bid_id)
+            self.logger.info('Skipped fetched early bid: %s', bid_id)
             return False
         return True
 
     def row(self, record):
-        value = record["value"]
+        value = record.get("value", 0)
         bid = record["bid"]
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
-        if record[u'currency'] not in [u'UAH']:
-            return
+        if record[u'currency'] != u'UAH':
+            old = value
+            value, rate = value_currency_normalize(
+                value, record[u'currency'], record[u'startdate']
+            )
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
+                    )
+            self.Logger.info(msg)
         payment = self.get_payment(float(value))
         for i, x in enumerate(self.payments):
             if payment == x:
+                msg = 'Computated bill {} for value {} '\
+                      'in {} tender'.format(payment, value, record['tender'])
+                self.Logger.info(msg)
                 self.counter[i] += 1
 
-    def get_rows(self):
-        row = []
-        for c, v in zip(self.counter, self.payments):
-            row.append(c * v)
-        self._rows.append(row)
-
     def rows(self):
+        self._rows = [self.counter, self.payments]
         for resp in self.response:
             self.row(resp['value'])
-        self.get_rows()
+        self._rows.append(
+            [c*v for c, v in zip(self.counter, self.payments)]
+        )
         for row in self._rows:
             yield row
 
@@ -72,8 +87,7 @@ def run():
     owner, period, config = parse_args()
     utility.init_from_args(owner, period, config)
     utility.headers = thresholds_headers(utility.thresholds)
-    utility.counter = [0 for _ in xrange(len(utility.payments))]
-    utility._rows = [utility.counter, utility.payments]
+    utility.counter = [0 for _ in utility.payments]
     utility.run()
 
 

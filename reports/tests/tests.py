@@ -4,8 +4,8 @@ import os
 import os.path
 from couchdb import Session
 from ConfigParser import ConfigParser
-from config import create_db_url
-from core import ReportUtility
+from reports.config import create_db_url
+from reports.core import ReportUtility
 from copy import copy
 
 

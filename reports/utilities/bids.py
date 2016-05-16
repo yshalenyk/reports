@@ -1,14 +1,14 @@
 import yaml
 import requests
 import requests_cache
-import logging
-from core import (
+from reports.core import (
     ReportUtility,
-    parse_args
+    parse_args,
+    value_currency_normalize
 )
 from requests.exceptions import RequestException
+from yaml.scanner import ScannerError
 
-Logger = logging.getLogger(__name__)
 requests_cache.install_cache('audit_cache')
 
 
@@ -23,7 +23,7 @@ class BidsUtility(ReportUtility):
 
     def bid_date_valid(self, bid_id, audit):
         if bid_id in self.skip_bids or not audit:
-            self.config.logger.info('Skipped cached early bid: %s', bid_id)
+            self.Logger.info('Skipped cached early bid: %s', bid_id)
             return False
         try:
             yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
@@ -32,14 +32,18 @@ class BidsUtility(ReportUtility):
                 if bid['date'] < "2016-04-01":
                     self.skip_bids.add(bid['bidder'])
         except RequestException as e:
-            msg = 'Request falied at getting audit file of {0}  bid with {1}'.format(bid_id, e)
-            self.config.logger.error(msg)
+            msg = 'Request falied at getting audit file'\
+                    'of {0}  bid with {1}'.format(bid_id, e)
+            self.Logger.error(msg)
+        except ScannerError:
+            msg = 'falied to scan audit file of {} bid'.format(bid_id)
+            self.Logger.error(msg)
         except KeyError:
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.config.logger.error(msg)
+            self.Logger.error(msg)
 
         if bid_id in self.skip_bids:
-            self.config.logger.info('Skipped fetched early bid: %s', bid_id)
+            self.Logger.info('Skipped fetched early bid: %s', bid_id)
             return False
         return True
 
@@ -48,8 +52,25 @@ class BidsUtility(ReportUtility):
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
-        row = list(record.get(col) for col in self.headers[:-1])
-        row.append(self.get_payment(float(record.get(u'value', 0))))
+        row = list(record.get(col, '') for col in self.headers[:-1])
+        value = float(record.get(u'value', 0))
+        if record[u'currency'] != u'UAH':
+            old = value
+            value, rate = value_currency_normalize(
+                value, record[u'currency'], record[u'startdate']
+            )
+            msg = "Changed value {} {} by exgange rate {} on {}"\
+                  " is  {} UAH in {}".format(
+                        old, record[u'currency'], rate,
+                        record[u'startdate'], value, record['tender']
+                    )
+            self.Logger.info(msg)
+        row.append(self.get_payment(value))
+        self.Logger.info(
+            "Bill {} for tender {} with value {}".format(
+                row[-1], row[0], value
+            )
+        )
         return row
 
     def rows(self):

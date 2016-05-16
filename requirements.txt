@@ -1,3 +1,5 @@
 couchdb
 dateparser
 pbkdf2
+requests
+requests_cache
