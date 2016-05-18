@@ -22,7 +22,7 @@ class InvoicesUtility(ReportUtility):
 
     def bid_date_valid(self, bid_id, audit):
         if bid_id in self.skip_bids or not audit:
-            self.config.logger.info('Skipped cached early bid: %s', bid_id)
+            self.Logger.info('Skipped cached early bid: %s', bid_id)
             return False
         try:
             yfile = yaml.load(requests.get(self.api_url + audit['url']).text)
@@ -33,16 +33,16 @@ class InvoicesUtility(ReportUtility):
         except RequestException as e:
             msg = "Request falied at getting audit file"\
                     "of {0}  bid with {1}".format(bid_id, e)
-            self.logger.info(msg)
+            self.Logger.info(msg)
         except ScannerError:
             msg = 'falied to scan audit file of {} bid'.format(bid_id)
             self.Logger.error(msg)
         except KeyError:
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.logger.info(msg)
+            self.Logger.info(msg)
 
         if bid_id in self.skip_bids:
-            self.logger.info('Skipped fetched early bid: %s', bid_id)
+            self.Logger.info('Skipped fetched early bid: %s', bid_id)
             return False
         return True
 
