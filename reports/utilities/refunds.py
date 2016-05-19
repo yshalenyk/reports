@@ -13,6 +13,10 @@ class RefundsUtility(ReportUtility):
         self.view = 'report/tenders_owner_date'
 
     def row(self, record):
+        tender = record.get('tender', '')
+        if tender in self.ignored_list:
+            self.Logger.info('Scip tender {} by ignore list'.format(tender))
+            return
         value = record.get("value", 0)
         if record[u'currency'] != u'UAH':
             old = value
@@ -47,8 +51,8 @@ class RefundsUtility(ReportUtility):
 
 def run():
     utility = RefundsUtility()
-    owner, period, config = parse_args()
-    utility.init_from_args(owner, period, config)
+    owner, period, config, ignored = parse_args()
+    utility.init_from_args(owner, period, config, ignored)
     utility.headers = thresholds_headers(utility.thresholds)
     utility.counter = [0 for _ in utility.payments]
     utility.run()

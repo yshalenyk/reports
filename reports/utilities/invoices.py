@@ -84,8 +84,8 @@ class InvoicesUtility(ReportUtility):
 
 def run():
     utility = InvoicesUtility()
-    owner, period, config = parse_args()
-    utility.init_from_args(owner, period, config)
+    owner, period, config, ignored = parse_args()
+    utility.init_from_args(owner, period, config, ignored)
     utility.headers = thresholds_headers(utility.thresholds)
     utility.counter = [0 for _ in utility.payments]
     utility.run()

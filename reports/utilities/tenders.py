@@ -14,6 +14,10 @@ class TendersUtility(ReportUtility):
                         "kind", "value", "bill"]
 
     def row(self, record):
+        tender = record.get('tender', '')
+        if tender in self.ignored_list:
+            self.Logger.info('Scip tender {} by ignore list'.format(tender))
+            return
         row = list(record.get(col, '') for col in self.headers[:-1])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':
@@ -44,8 +48,8 @@ class TendersUtility(ReportUtility):
 
 def run():
     utility = TendersUtility()
-    owner, period, config = parse_args()
-    utility.init_from_args(owner, period, config)
+    owner, period, config, ignored = parse_args()
+    utility.init_from_args(owner, period, config, ignored)
     utility.run()
 
 if __name__ == "__main__":
