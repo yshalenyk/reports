@@ -28,11 +28,12 @@ class ReportUtility(object):
         self.headers = None
         self.operation = operation
 
-    def init_from_args(self, owner, period, config=None):
+    def init_from_args(self, owner, period, config, ignored=set()):
         self.owner = owner
         self.config = Config(config)
         self.start_date = ''
         self.end_date = ''
+        self.ignored_list = ignored
 
         if period:
             if len(period) == 1:
@@ -96,13 +97,13 @@ class ReportUtility(object):
             self.response = self.db.iterview(
                 self.view, 1000,
                 startkey=(self.owner, ""),
-                endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")
+                endkey=(self.owner, "9999-12-30T00:00:00.000000")
             )
         elif self.start_date and not self.end_date:
             self.response = self.db.iterview(
                 self.view, 1000,
                 startkey=(self.owner, self.start_date),
-                endkey=(self.owner, "9999-12-30T00:00:00.000000+03:00")
+                endkey=(self.owner, "9999-12-30T00:00:00.000000")
             )
         else:
             self.response = self.db.iterview(
@@ -155,8 +156,14 @@ def parse_args():
         default='~/.config/reports/reports.ini'
     )
     parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
+    parser.add_argument('-i', '--ignored', dest='ignored')
     args = parser.parse_args()
-    return args.owner.strip(), args.period, args.config
+    if args.ignored and os.path.exists(args.ignored):
+        with open(args.ignored) as ignore_f:
+            ignored_list = set(line.strip('\n') for line in ignore_f)
+    else:
+        ignored_list = set()
+    return args.owner.strip(), args.period, args.config, ignored_list
 
 
 def value_currency_normalize(value, currency, date):
