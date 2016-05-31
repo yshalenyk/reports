@@ -160,7 +160,7 @@ def parse_args():
     args = parser.parse_args()
     if args.ignored and os.path.exists(args.ignored):
         with open(args.ignored) as ignore_f:
-            ignored_list = set(line.strip('\n') for line in ignore_f)
+            ignored_list = set(unicode(line.strip('\n')) for line in ignore_f)
     else:
         ignored_list = set()
     return args.owner.strip(), args.period, args.config, ignored_list

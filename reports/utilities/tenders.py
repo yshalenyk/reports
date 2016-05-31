@@ -11,17 +11,24 @@ class TendersUtility(ReportUtility):
         ReportUtility.__init__(self, 'tenders', rev=True)
         self.view = 'report/tenders_owner_date'
         self.headers = ["tender", "tenderID", "lot", "currency",
-                        "kind", "value", "bill"]
+                        "kind", "value","rate", "bill"]
 
     def row(self, record):
+        rate = None
         tender = record.get('tender', '')
-        if tender in self.ignored_list:
-            self.Logger.info('Scip tender {} by ignore list'.format(tender))
-            return
+        lot = record.get('lot', '')
+        if lot:
+            if tender in self.ignored_list and lot in self.ignored_list:
+                self.Logger.info('Scip tender {} by ignore list'.format(tender))
+                return
+        else:
+            if tender in self.ignored_list:
+                self.Logger.info('Scip tender {} by ignore lot {}'.format(lot))
+                return
         if record.get('kind') == u'other':
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
-        row = list(record.get(col, '') for col in self.headers[:-1])
+        row = list(record.get(col, '') for col in self.headers[:-2])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':
             old = value
@@ -34,7 +41,8 @@ class TendersUtility(ReportUtility):
                         record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
-
+        r = str(rate) if rate else ''
+        row.append(r)
         row.append(self.get_payment(value))
         self.Logger.info("Bill {} for tender {} with value {}".format(
                 row[-1], row[0], value

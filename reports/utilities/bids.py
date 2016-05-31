@@ -17,7 +17,7 @@ class BidsUtility(ReportUtility):
     def __init__(self):
         ReportUtility.__init__(self, 'bids')
         self.headers = [u"tender", u"tenderID", u"lot",
-                        u"value", u"currency", u"bid", u"bill"]
+                        u"value", u"currency", u"bid", u'rate', u"bill"]
         self.view = 'report/bids_owner_date'
         self.skip_bids = set()
 
@@ -49,10 +49,11 @@ class BidsUtility(ReportUtility):
 
     def row(self, record):
         bid = record.get(u'bid', '')
+        rate = None
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
-        row = list(record.get(col, '') for col in self.headers[:-1])
+        row = list(record.get(col, '') for col in self.headers[:-2])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':
             old = value
@@ -65,6 +66,7 @@ class BidsUtility(ReportUtility):
                         record[u'startdate'], value, record['tender']
                     )
             self.Logger.info(msg)
+        r = str(rate) if rate else ''
         row.append(self.get_payment(value))
         self.Logger.info(
             "Bill {} for tender {} with value {}".format(
