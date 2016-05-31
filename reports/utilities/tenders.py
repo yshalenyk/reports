@@ -18,6 +18,9 @@ class TendersUtility(ReportUtility):
         if tender in self.ignored_list:
             self.Logger.info('Scip tender {} by ignore list'.format(tender))
             return
+        if record.get('kind') == u'other':
+            self.Logger.info('Scip tender {} by kind'.format(tender))
+            return
         row = list(record.get(col, '') for col in self.headers[:-1])
         value = float(record.get(u'value', 0))
         if record[u'currency'] != u'UAH':

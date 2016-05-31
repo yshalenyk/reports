@@ -17,6 +17,9 @@ class RefundsUtility(ReportUtility):
         if tender in self.ignored_list:
             self.Logger.info('Scip tender {} by ignore list'.format(tender))
             return
+        if record.get('kind') == u'other':
+            self.Logger.info('Scip tender {} by kind'.format(tender))
+            return
         value = record.get("value", 0)
         if record[u'currency'] != u'UAH':
             old = value
