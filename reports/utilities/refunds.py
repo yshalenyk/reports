@@ -21,7 +21,7 @@ class RefundsUtility(ReportUtility):
                 return
         else:
             if tender in self.ignored_list:
-                self.Logger.info('Scip tender {} by ignore lot {}'.format(lot))
+                self.Logger.info('Scip tender {} by ignore list'.format(lot))
                 return
         if record.get('kind') == u'other':
             self.Logger.info('Scip tender {} by kind'.format(tender))

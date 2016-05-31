@@ -67,6 +67,7 @@ class BidsUtility(ReportUtility):
                     )
             self.Logger.info(msg)
         r = str(rate) if rate else ''
+        row.append(r)
         row.append(self.get_payment(value))
         self.Logger.info(
             "Bill {} for tender {} with value {}".format(
