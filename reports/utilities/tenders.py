@@ -1,17 +1,17 @@
 from reports.core import (
-    ReportUtility,
+    BaseUtility,
     parse_args,
     value_currency_normalize
 )
 
 
-class TendersUtility(ReportUtility):
+class TendersUtility(BaseUtility):
 
     def __init__(self):
-        ReportUtility.__init__(self, 'tenders', rev=True)
+        super(TendersUtility, self).__init__('tenders', rev=True)
         self.view = 'report/tenders_owner_date'
         self.headers = ["tender", "tenderID", "lot", "currency",
-                        "kind", "value","rate", "bill"]
+                        "kind", "value", "rate", "bill"]
 
     def row(self, record):
         rate = None
@@ -19,11 +19,15 @@ class TendersUtility(ReportUtility):
         lot = record.get('lot', '')
         if lot:
             if tender in self.ignored_list and lot in self.ignored_list:
-                self.Logger.info('Scip tender {} with lot {} by ignore list'.format(tender, lot))
+                self.Logger.info(
+                    'Scip tender {} with lot {} by'
+                    ' ignore list'.format(tender, lot))
                 return
         else:
             if tender in self.ignored_list:
-                self.Logger.info('Scip tender {} by ignore list'.format(tender))
+                self.Logger.info(
+                    'Scip tender {} by ignore list'.format(tender)
+                )
                 return
         if record.get('kind') == u'other':
             self.Logger.info('Scip tender {} by kind'.format(tender))
@@ -36,15 +40,16 @@ class TendersUtility(ReportUtility):
                 value, record[u'currency'], record[u'startdate']
             )
             msg = "Changed value {} {} by exgange rate {} on {}"\
-                  " is  {} UAH in {}".format(
-                        old, record[u'currency'], rate,
-                        record[u'startdate'], value, record['tender']
-                    )
+                " is  {} UAH in {}".format(
+                    old, record[u'currency'], rate,
+                    record[u'startdate'], value, record['tender']
+                )
             self.Logger.info(msg)
         r = str(rate) if rate else ''
         row.append(r)
         row.append(self.get_payment(value))
-        self.Logger.info("Bill {} for tender {} with value {}".format(
+        self.Logger.info(
+            "Bill {} for tender {} with value {}".format(
                 row[-1], row[0], value
             )
         )
@@ -60,7 +65,7 @@ class TendersUtility(ReportUtility):
 def run():
     utility = TendersUtility()
     owner, period, config, ignored = parse_args()
-    utility.init_from_args(owner, period, config, ignored)
+    utility.initialize(owner, period, config, ignored)
     utility.run()
 
 if __name__ == "__main__":

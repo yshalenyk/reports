@@ -21,16 +21,16 @@ views = [bids_owner_date, tenders_owner_date]
 requests_cache.install_cache('exchange_chache')
 
 
-class ReportUtility(object):
+class BaseUtility(object):
 
     def __init__(self, operation, rev=False):
         self.rev = rev
         self.headers = None
         self.operation = operation
 
-    def init_from_args(self, owner, period, config, ignored=set()):
+    def initialize(self, owner, period, config, ignored=set()):
         self.owner = owner
-        self.config = Config(config)
+        self.config = Config(config, self.rev)
         self.start_date = ''
         self.end_date = ''
         self.ignored_list = ignored
@@ -42,9 +42,6 @@ class ReportUtility(object):
                 self.start_date = self.convert_date(period[0])
                 self.end_date = self.convert_date(period[1])
         self.get_db_connection()
-        self.thresholds = self.config.get_thresholds()
-        self.payments = self.config.get_payments(self.rev)
-        self.api_url = self.config.get_api_url()
         self.Logger = getLogger(self.operation)
 
     def get_db_connection(self):
@@ -79,10 +76,10 @@ class ReportUtility(object):
         return utc_date.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     def get_payment(self, value):
-        for index, threshold in enumerate(self.thresholds):
+        for index, threshold in enumerate(self.config.thresholds):
             if value <= threshold:
-                return self.payments[index]
-        return self.payments[-1]
+                return self.config.payments[index]
+        return self.config.payments[-1]
 
     def _sync_views(self):
         ViewDefinition.sync_many(self.adb, views)
@@ -116,7 +113,7 @@ class ReportUtility(object):
         name = "{}@{}--{}-{}.csv".format(
             self.owner, self.start_date, self.end_date, self.operation
         )
-        self.put_path = os.path.join(self.config.get_out_path(), name)
+        self.put_path = os.path.join(self.config.out_path, name)
 
     def write_csv(self):
         if not self.headers:
@@ -136,7 +133,7 @@ class ReportUtility(object):
 def thresholds_headers(cthresholds):
     prev_threshold = None
     result = []
-    thresholds = [str(t/1000) for t in cthresholds]
+    thresholds = [str(t / 1000) for t in cthresholds]
     for t in thresholds:
         if not prev_threshold:
             result.append("<= " + t)
@@ -170,9 +167,9 @@ def value_currency_normalize(value, currency, date):
     if not isinstance(value, (float, int)):
         raise ValueError
     base_url = 'http://bank.gov.ua/NBUStatService'\
-               '/v1/statdirectory/exchange?date={}&json'.format(
-                    iso8601.parse_date(date).strftime('%Y%m%d')
-               )
+        '/v1/statdirectory/exchange?date={}&json'.format(
+            iso8601.parse_date(date).strftime('%Y%m%d')
+        )
     resp = requests.get(base_url).text.encode('utf-8')
     doc = json.loads(resp)
     if currency == u'RUR':
