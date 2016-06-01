@@ -87,8 +87,8 @@ class BidsUtility(BaseUtility):
 
 def run():
     utility = BidsUtility()
-    owner, period, config, ignored = parse_args()
-    utility.initialize(owner, period, config, ignored)
+    owner, period, config, ignored, tz = parse_args()
+    utility.initialize(owner, period, config, ignored, tz)
     utility.run()
 
 

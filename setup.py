@@ -7,7 +7,9 @@ install_requires = [
     'requests',
     'requests_cache',
     'pytz',
-    'iso8601'
+    'iso8601',
+    'pyminizip',
+    'arrow',
 ]
 
 

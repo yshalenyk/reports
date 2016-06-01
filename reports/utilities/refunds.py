@@ -65,8 +65,8 @@ class RefundsUtility(BaseUtility):
 
 def run():
     utility = RefundsUtility()
-    owner, period, config, ignored = parse_args()
-    utility.initialize(owner, period, config, ignored)
+    owner, period, config, ignored, tz = parse_args()
+    utility.initialize(owner, period, config, ignored, tz)
     utility.headers = thresholds_headers(utility.config.thresholds)
     utility.counter = [0 for _ in utility.config.payments]
     utility.run()

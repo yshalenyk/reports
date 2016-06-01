@@ -50,7 +50,7 @@ class InvoicesUtility(BaseUtility):
 
     def row(self, record):
         value = float(record.get("value", 0))
-        bid = record["bid"]
+        bid = record.get(u"bid", '')
         if record.get('tender_start_date', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
@@ -86,8 +86,8 @@ class InvoicesUtility(BaseUtility):
 
 def run():
     utility = InvoicesUtility()
-    owner, period, config, ignored = parse_args()
-    utility.initialize(owner, period, config, ignored)
+    owner, period, config, ignored, tz = parse_args()
+    utility.initialize(owner, period, config, ignored, tz)
     utility.headers = thresholds_headers(utility.config.thresholds)
     utility.counter = [0 for _ in utility.config.payments]
     utility.run()

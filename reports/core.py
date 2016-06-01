@@ -8,7 +8,9 @@ import requests
 import requests_cache
 import json
 import iso8601
-import pytz
+import arrow
+import time
+from dateutil.parser import parse
 from config import Config, create_db_url
 from design import bids_owner_date, tenders_owner_date
 from argparse import ArgumentParser
@@ -28,12 +30,13 @@ class BaseUtility(object):
         self.headers = None
         self.operation = operation
 
-    def initialize(self, owner, period, config, ignored=set()):
+    def initialize(self, owner, period, config, ignored=set(), tz=''):
         self.owner = owner
         self.config = Config(config, self.rev)
         self.start_date = ''
         self.end_date = ''
         self.ignored_list = ignored
+        self.timezone = tz
 
         if period:
             if len(period) == 1:
@@ -69,11 +72,11 @@ class BaseUtility(object):
         raise NotImplemented
 
     def convert_date(self, date):
-        iso_date = iso8601.parse_date(date)
-        utc_date = iso_date.astimezone(
-            pytz.timezone('UTC')
-        )
-        return utc_date.strftime("%Y-%m-%dT%H:%M:%S.%f")
+        if len(date) < 3:
+            date = time.strftime("%Y-%m-") + date
+        date = arrow.get(parse(date), self.timezone)
+        res = date.to('UTC').strftime("%Y-%m-%dT%H:%M:%S.%f")
+        return res
 
     def get_payment(self, value):
         for index, threshold in enumerate(self.config.thresholds):
@@ -154,13 +157,20 @@ def parse_args():
     )
     parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
     parser.add_argument('-i', '--ignored', dest='ignored')
+    parser.add_argument(
+        '-t',
+        '--timezone',
+        dest='timezone',
+        default='Europe/Kiev'
+    )
     args = parser.parse_args()
     if args.ignored and os.path.exists(args.ignored):
         with open(args.ignored) as ignore_f:
             ignored_list = set(unicode(line.strip('\n')) for line in ignore_f)
     else:
         ignored_list = set()
-    return args.owner.strip(), args.period, args.config, ignored_list
+    return (args.owner.strip(), args.period,
+            args.config, ignored_list, args.timezone)
 
 
 def value_currency_normalize(value, currency, date):

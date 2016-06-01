@@ -64,8 +64,8 @@ class TendersUtility(BaseUtility):
 
 def run():
     utility = TendersUtility()
-    owner, period, config, ignored = parse_args()
-    utility.initialize(owner, period, config, ignored)
+    owner, period, config, ignored, tz = parse_args()
+    utility.initialize(owner, period, config, ignored, tz)
     utility.run()
 
 if __name__ == "__main__":
