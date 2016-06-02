@@ -16,7 +16,7 @@ from config import Config
 from design import bids_owner_date, tenders_owner_date
 from couchdb.design import ViewDefinition
 from logging import getLogger
-from reports.helpers import get_cmd_parser, create_db_url
+from reports.helpers import get_cmd_parser, create_db_url, Kind
 
 
 views = [bids_owner_date, tenders_owner_date]
@@ -194,28 +194,12 @@ class BaseTendersUtility(BaseUtility):
         super(BaseTendersUtility, self).__init__(operation, rev=True)
         self.view = 'report/tenders_owner_date'
         parser = get_cmd_parser()
-        kind = parser.add_argument_group(
-            'Kind',
-            'Kind filtering. By default utility include'
-            ' only general, special, defence and skip other'
-        )
-        kind.add_argument(
-            '--kind-include',
-            action='store',
-            metavar='Include',
-            help='Include kind'
-        )
-        kind.add_argument(
-            '--kind-exclude',
-            action='store',
-            metavar='Exclude',
-            help='Exclude kind'
-        )
-        kind.add_argument(
-            '--kind-only',
-            action='store',
-            metavar='Only',
-            help='Exclude all kinds except one that placed'
+        parser.add_argument(
+            '--kind',
+            metavar='Kind',
+            action=Kind,
+            help='Kind filtering functionality. '
+                 'Usage: --kind <include, exclude, one>=<kinds>'
         )
         args = parser.parse_args()
         self.ignore = set()
@@ -225,5 +209,6 @@ class BaseTendersUtility(BaseUtility):
             args.config,
             args.timezone
         )
+        self.kinds = args.kind
         if args.ignore:
             self.ignore = [line.strip('\n') for line in args.ignore]

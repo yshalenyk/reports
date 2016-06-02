@@ -90,3 +90,61 @@ def create_db_url(host, port, user, passwd, db_name=''):
     if db_name:
         url += '/{}'.format(db_name)
     return url
+
+
+class Kind(argparse.Action):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+
+        self.kinds = set(['general', 'special', 'defence'])
+        super(Kind, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=self.kinds,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(
+            self, parser, args, values, option_string=None):
+        options = values.split('=')
+        self.parser = parser
+        if len(options) < 2:
+            parser.error("usage <option>=<kind>")
+        action = options[0]
+        kinds = options[1].split(',')
+        try:
+            getattr(self, action)(kinds)
+        except AttributeError:
+            self.parser.error("<option> should be one from [include, exclude, one]")
+
+        setattr(args, self.dest, self.kinds)
+
+    def include(self, kinds):
+        for kind in kinds:
+            self.kinds.add(kind)
+
+    def exclude(self, kinds):
+        for kind in kinds:
+            if kind in self.kinds:
+                self.kinds.remove(kind)
+
+    def one(self, kinds):
+        for kind in kinds:
+            if kind not in ['general', 'special', 'exclude', 'other']:
+                self.parser.error('Allowed only general, special, exclude, other')
+        self.kinds = set([kind])

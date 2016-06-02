@@ -29,7 +29,7 @@ class RefundsUtility(BaseTendersUtility):
                     'Scip tender {} by ignore list'.format(tender)
                 )
                 return
-        if record.get('kind') == u'other':
+        if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
         value = float(record.get("value", 0))

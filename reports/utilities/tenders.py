@@ -27,7 +27,7 @@ class TendersUtility(BaseTendersUtility):
                     'Scip tender {} by ignore list'.format(tender)
                 )
                 return
-        if record.get('kind') == u'other':
+        if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
         row = list(record.get(col, '') for col in self.headers[:-2])
