@@ -113,8 +113,17 @@ class BaseUtility(object):
             )
 
     def out_name(self):
+        start = ''
+        end = ''
+        if self.start_date:
+            start = arrow.get(parse(self.start_date)).to('Europe/Kiev').strftime("%m-%d")
+        if self.end_date:
+            end = arrow.get(parse(self.end_date)).to('Europe/Kiev').strftime("%m-%d")
         name = "{}@{}--{}-{}.csv".format(
-            self.owner, self.start_date, self.end_date, self.operation
+            self.owner,
+            start,
+            end,
+            self.operation
         )
         self.put_path = os.path.join(self.config.out_path, name)
 
