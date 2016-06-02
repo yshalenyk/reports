@@ -45,13 +45,3 @@ class Config(object):
     @property
     def out_path(self):
         return self.get_option('out', 'out_dir')
-
-
-def create_db_url(host, port, user, passwd, db_name=''):
-    up = ''
-    if user and passwd:
-        up = '{}:{}@'.format(user, passwd)
-    url = 'http://{}{}:{}'.format(up, host, port)
-    if db_name:
-        url += '/{}'.format(db_name)
-    return url

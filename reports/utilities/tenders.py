@@ -1,15 +1,13 @@
-from reports.core import (
-    BaseUtility,
-    parse_args,
+from reports.core import BaseTendersUtility
+from reports.helpers import (
     value_currency_normalize
 )
 
 
-class TendersUtility(BaseUtility):
+class TendersUtility(BaseTendersUtility):
 
     def __init__(self):
-        super(TendersUtility, self).__init__('tenders', rev=True)
-        self.view = 'report/tenders_owner_date'
+        super(TendersUtility, self).__init__('tenders')
         self.headers = ["tender", "tenderID", "lot", "currency",
                         "kind", "value", "rate", "bill"]
 
@@ -18,13 +16,13 @@ class TendersUtility(BaseUtility):
         tender = record.get('tender', '')
         lot = record.get('lot', '')
         if lot:
-            if tender in self.ignored_list and lot in self.ignored_list:
+            if tender in self.ignore and lot in self.ignore:
                 self.Logger.info(
                     'Scip tender {} with lot {} by'
                     ' ignore list'.format(tender, lot))
                 return
         else:
-            if tender in self.ignored_list:
+            if tender in self.ignore:
                 self.Logger.info(
                     'Scip tender {} by ignore list'.format(tender)
                 )
@@ -64,8 +62,6 @@ class TendersUtility(BaseUtility):
 
 def run():
     utility = TendersUtility()
-    owner, period, config, ignored, tz = parse_args()
-    utility.initialize(owner, period, config, ignored, tz)
     utility.run()
 
 if __name__ == "__main__":

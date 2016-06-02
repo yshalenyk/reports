@@ -4,23 +4,24 @@ import os.path
 import csv
 import os
 import os.path
-import requests
-import requests_cache
-import json
-import iso8601
 import arrow
 import time
+import yaml
+import requests
+import requests_cache
+from requests.exceptions import RequestException
+from yaml.scanner import ScannerError
 from dateutil.parser import parse
-from config import Config, create_db_url
+from config import Config
 from design import bids_owner_date, tenders_owner_date
-from argparse import ArgumentParser
 from couchdb.design import ViewDefinition
 from logging import getLogger
+from reports.helpers import get_cmd_parser, create_db_url
 
 
 views = [bids_owner_date, tenders_owner_date]
 
-requests_cache.install_cache('exchange_chache')
+requests_cache.install_cache('audit_cache')
 
 
 class BaseUtility(object):
@@ -30,12 +31,11 @@ class BaseUtility(object):
         self.headers = None
         self.operation = operation
 
-    def initialize(self, owner, period, config, ignored=set(), tz=''):
-        self.owner = owner
+    def _initialize(self, broker, period, config, tz=''):
+        self.broker = broker
         self.config = Config(config, self.rev)
         self.start_date = ''
         self.end_date = ''
-        self.ignored_list = ignored
         self.timezone = tz
 
         if period:
@@ -96,31 +96,33 @@ class BaseUtility(object):
         if not self.start_date and not self.end_date:
             self.response = self.db.iterview(
                 self.view, 1000,
-                startkey=(self.owner, ""),
-                endkey=(self.owner, "9999-12-30T00:00:00.000000")
+                startkey=(self.broker, ""),
+                endkey=(self.broker, "9999-12-30T00:00:00.000000")
             )
         elif self.start_date and not self.end_date:
             self.response = self.db.iterview(
                 self.view, 1000,
-                startkey=(self.owner, self.start_date),
-                endkey=(self.owner, "9999-12-30T00:00:00.000000")
+                startkey=(self.broker, self.start_date),
+                endkey=(self.broker, "9999-12-30T00:00:00.000000")
             )
         else:
             self.response = self.db.iterview(
                 self.view, 1000,
-                startkey=(self.owner, self.start_date),
-                endkey=(self.owner, self.end_date)
+                startkey=(self.broker, self.start_date),
+                endkey=(self.broker, self.end_date)
             )
 
     def out_name(self):
         start = ''
         end = ''
         if self.start_date:
-            start = arrow.get(parse(self.start_date)).to('Europe/Kiev').strftime("%m-%d")
+            start = arrow.get(parse(self.start_date))\
+                .to('Europe/Kiev').strftime("%m-%d")
         if self.end_date:
-            end = arrow.get(parse(self.end_date)).to('Europe/Kiev').strftime("%m-%d")
+            end = arrow.get(parse(self.end_date))\
+                .to('Europe/Kiev').strftime("%m-%d")
         name = "{}@{}--{}-{}.csv".format(
-            self.owner,
+            self.broker,
             start,
             end,
             self.operation
@@ -142,56 +144,86 @@ class BaseUtility(object):
         self.write_csv()
 
 
-def thresholds_headers(cthresholds):
-    prev_threshold = None
-    result = []
-    thresholds = [str(t / 1000) for t in cthresholds]
-    for t in thresholds:
-        if not prev_threshold:
-            result.append("<= " + t)
-        else:
-            result.append(">" + prev_threshold + "<=" + t)
-        prev_threshold = t
-    result.append(">" + thresholds[-1])
-    return result
+class BaseBidsUtility(BaseUtility):
 
-
-def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument('-o', '--owner', dest='owner', required=True)
-    parser.add_argument(
-        '-c', '--config', dest='config',
-        required=False,
-        default='~/.config/reports/reports.ini'
-    )
-    parser.add_argument('-p', '--period', nargs='+', dest='period', default=[])
-    parser.add_argument('-i', '--ignored', dest='ignored')
-    parser.add_argument(
-        '-t',
-        '--timezone',
-        dest='timezone',
-        default='Europe/Kiev'
-    )
-    args = parser.parse_args()
-    if args.ignored and os.path.exists(args.ignored):
-        with open(args.ignored) as ignore_f:
-            ignored_list = set(unicode(line.strip('\n')) for line in ignore_f)
-    else:
-        ignored_list = set()
-    return (args.owner.strip(), args.period,
-            args.config, ignored_list, args.timezone)
-
-
-def value_currency_normalize(value, currency, date):
-    if not isinstance(value, (float, int)):
-        raise ValueError
-    base_url = 'http://bank.gov.ua/NBUStatService'\
-        '/v1/statdirectory/exchange?date={}&json'.format(
-            iso8601.parse_date(date).strftime('%Y%m%d')
+    def __init__(self, operation):
+        super(BaseBidsUtility, self).__init__(operation)
+        self.view = 'report/bids_owner_date'
+        self.skip_bids = set()
+        parser = get_cmd_parser()
+        args = parser.parse_args()
+        self._initialize(
+            args.broker,
+            args.period,
+            args.config,
+            args.timezone
         )
-    resp = requests.get(base_url).text.encode('utf-8')
-    doc = json.loads(resp)
-    if currency == u'RUR':
-        currency = u'RUB'
-    rate = filter(lambda x: x[u'cc'] == currency, doc)[0][u'rate']
-    return value * rate, rate
+
+    def bid_date_valid(self, bid_id, audit):
+        if bid_id in self.skip_bids or not audit:
+            self.Logger.info('Skipped cached early bid: %s', bid_id)
+            return False
+        try:
+            yfile = yaml.load(
+                requests.get(self.config.api_url + audit['url']).text
+            )
+            initial_bids = yfile['timeline']['auction_start']['initial_bids']
+            for bid in initial_bids:
+                if bid['date'] < "2016-04-01":
+                    self.skip_bids.add(bid['bidder'])
+        except RequestException as e:
+            msg = "Request falied at getting audit file"\
+                "of {0}  bid with {1}".format(bid_id, e)
+            self.Logger.info(msg)
+        except ScannerError:
+            msg = 'falied to scan audit file of {} bid'.format(bid_id)
+            self.Logger.error(msg)
+        except KeyError:
+            msg = 'falied to parse audit file of {} bid'.format(bid_id)
+            self.Logger.info(msg)
+
+        if bid_id in self.skip_bids:
+            self.Logger.info('Skipped fetched early bid: %s', bid_id)
+            return False
+        return True
+
+
+class BaseTendersUtility(BaseUtility):
+
+    def __init__(self, operation):
+        super(BaseTendersUtility, self).__init__(operation, rev=True)
+        self.view = 'report/tenders_owner_date'
+        parser = get_cmd_parser()
+        kind = parser.add_argument_group(
+            'Kind',
+            'Kind filtering. By default utility include'
+            ' only general, special, defence and skip other'
+        )
+        kind.add_argument(
+            '--kind-include',
+            action='store',
+            metavar='Include',
+            help='Include kind'
+        )
+        kind.add_argument(
+            '--kind-exclude',
+            action='store',
+            metavar='Exclude',
+            help='Exclude kind'
+        )
+        kind.add_argument(
+            '--kind-only',
+            action='store',
+            metavar='Only',
+            help='Exclude all kinds except one that placed'
+        )
+        args = parser.parse_args()
+        self.ignore = set()
+        self._initialize(
+            args.broker,
+            args.period,
+            args.config,
+            args.timezone
+        )
+        if args.ignore:
+            self.ignore = [line.strip('\n') for line in args.ignore]

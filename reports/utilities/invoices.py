@@ -1,52 +1,19 @@
-import yaml
-import requests
-import requests_cache
-from requests.exceptions import RequestException
-from yaml.scanner import ScannerError
-from reports.core import (
-    BaseUtility,
-    parse_args,
+from reports.core import BaseBidsUtility
+from reports.helpers import (
     thresholds_headers,
     value_currency_normalize
 )
 
-requests_cache.install_cache('audit_cache')
 
-
-class InvoicesUtility(BaseUtility):
+class InvoicesUtility(BaseBidsUtility):
 
     def __init__(self):
         super(InvoicesUtility, self).__init__('invoices')
-        self.view = 'report/bids_owner_date'
-        self.skip_bids = set()
+        self.headers = thresholds_headers(
+            self.config.thresholds
+        )
 
-    def bid_date_valid(self, bid_id, audit):
-        if bid_id in self.skip_bids or not audit:
-            self.Logger.info('Skipped cached early bid: %s', bid_id)
-            return False
-        try:
-            yfile = yaml.load(
-                requests.get(self.config.api_url + audit['url']).text
-            )
-            initial_bids = yfile['timeline']['auction_start']['initial_bids']
-            for bid in initial_bids:
-                if bid['date'] < "2016-04-01":
-                    self.skip_bids.add(bid['bidder'])
-        except RequestException as e:
-            msg = "Request falied at getting audit file"\
-                "of {0}  bid with {1}".format(bid_id, e)
-            self.Logger.info(msg)
-        except ScannerError:
-            msg = 'falied to scan audit file of {} bid'.format(bid_id)
-            self.Logger.error(msg)
-        except KeyError:
-            msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.Logger.info(msg)
-
-        if bid_id in self.skip_bids:
-            self.Logger.info('Skipped fetched early bid: %s', bid_id)
-            return False
-        return True
+        self.counter = [0 for _ in self.config.payments]
 
     def row(self, record):
         value = float(record.get("value", 0))
@@ -86,10 +53,6 @@ class InvoicesUtility(BaseUtility):
 
 def run():
     utility = InvoicesUtility()
-    owner, period, config, ignored, tz = parse_args()
-    utility.initialize(owner, period, config, ignored, tz)
-    utility.headers = thresholds_headers(utility.config.thresholds)
-    utility.counter = [0 for _ in utility.config.payments]
     utility.run()
 
 
