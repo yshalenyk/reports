@@ -26,6 +26,7 @@ setup(
             'refunds = reports.utilities.refunds:run',
             'invoices = reports.utilities.invoices:run',
             'init = reports.db_init:run',
+            'zip = reports.utilities.zip:run',
         ]
     },
     install_requires=install_requires
