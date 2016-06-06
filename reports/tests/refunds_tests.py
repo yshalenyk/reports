@@ -1,52 +1,22 @@
 import unittest
 import mock
-from reports.tests.base import BaseTenderUtilityTest
-from reports.utilities.refunds import RefundsUtility
-from reports.core import thresholds_headers
+from reports.tests.base import BaseRefundsUtilityTest
 from copy import copy
-from reports.tests.base import test_config
-
-test_bids_valid = [
-            [{
-                "owner": "test",
-                "date": "2016-04-17T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac",
-            }],
-            [{
-                "owner": "test",
-                "date": "2016-05-05T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac",
-            }],
-
-            [{
-                "owner": "test",
-                "date": "2016-05-10T13:32:25.774673+02:00",
-                "id": "f55962b1374b43ddb886821c0582bc7f"
-            }]]
 
 
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
 
 
-class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
-
-    def setUp(self):
-        super(ReportRefundsUtilityTestCase, self).setUp()
-        self.utility = RefundsUtility()
-        self.utility.init_from_args('test', [], test_config)
-        self.utility.headers = thresholds_headers(self.utility.thresholds)
-
-    def tearDown(self):
-        del self.server[self.db_name]
+class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
 
     def test_invoices_utility_output(self):
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         data = {
             "owner": "test",
             "procurementMethod": "open",
             "enquiryPeriod": {
-                 "startDate": '2016-04-17T13:32:25.774673+02:00',
-             },
+                "startDate": '2016-04-17T13:32:25.774673+02:00',
+            },
             "contracts": [
                 {
                     "status": "active",
@@ -54,7 +24,7 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                     "dateSigned": '2016-05-22T13:32:25.774673+02:00',
                     "documents": [{
                         'datePublished': "2016-06-22T13:32:25.774673+02:00",
-                        }]
+                    }]
                 }
             ],
         }
@@ -67,21 +37,28 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
             self.assertEqual(
                 self.utility.counter, [1, 0, 0, 0, 0]
             )
-            mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-            handler = mock_csv()
-            handler.write.assert_any_call('{}{}'.format(
-                ','.join(self.utility.headers), '\r\n'
-            ))
-            handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(i) for i in self.utility.counter]), '\r\n'
-            ))
-            handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments
-                )]), '\r\n'
-            ))
+            calls = [
+                mock.call('test/test@---refunds.csv', 'w'),
+                mock.call().__enter__(),
+                mock.call().write(
+                    str('{}{}'.format(','.join(self.utility.headers), '\r\n'))
+                ),
+                mock.call().write('{}{}'.format(','.join(
+                    [str(i) for i in self.utility.counter]), '\r\n')
+                ),
+                mock.call().write('{}{}'.format(','.join(
+                    [str(i) for i in self.utility.config.payments]), '\r\n')
+                ),
+                mock.call().write('{}{}'.format(','.join([
+                    str(c * p) for c, p in zip(
+                        self.utility.counter, self.utility.config.payments
+                    )]), '\r\n')
+                ),
+                mock.call().__exit__(None, None, None),
+            ]
+            mock_csv.assert_has_calls(calls)
 
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
         doc.update({'value': {'amount': 25000, 'currency': 'UAH'}})
         self.utility.db.save(doc)
@@ -101,12 +78,12 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                 ','.join([str(i) for i in self.utility.counter]), '\r\n'
             ))
             handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments
+                ','.join([str(c * p) for c, p in zip(
+                    self.utility.counter, self.utility.config.payments
                 )]), '\r\n'
             ))
 
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
         doc.update({'value': {'amount': 55000, 'currency': 'UAH'}})
         self.utility.db.save(doc)
@@ -126,12 +103,12 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                 ','.join([str(i) for i in self.utility.counter]), '\r\n'
             ))
             handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments
+                ','.join([str(c * p) for c, p in zip(
+                    self.utility.counter, self.utility.config.payments
                 )]), '\r\n'
             ))
 
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
         doc.update({'value': {'amount': 255000, 'currency': 'UAH'}})
         self.utility.db.save(doc)
@@ -151,12 +128,12 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                 ','.join([str(i) for i in self.utility.counter]), '\r\n'
             ))
             handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments
+                ','.join([str(c * p) for c, p in zip(
+                    self.utility.counter, self.utility.config.payments
                 )]), '\r\n'
             ))
 
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
         doc.update({'value': {'amount': 1255000, 'currency': 'UAH'}})
         self.utility.db.save(doc)
@@ -176,8 +153,8 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                 ','.join([str(i) for i in self.utility.counter]), '\r\n'
             ))
             handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments
+                ','.join([str(c * p) for c, p in zip(
+                    self.utility.counter, self.utility.config.payments
                 )]), '\r\n'
             ))
             del self.utility.db[doc['_id']]
@@ -187,8 +164,8 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
             "owner": "test",
             "procurementMethod": "open",
             "enquiryPeriod": {
-                 "startDate": '2016-04-17T13:32:25.774673+02:00',
-             },
+                "startDate": '2016-04-17T13:32:25.774673+02:00',
+            },
             "contracts": [
                 {
                     "status": "active",
@@ -196,7 +173,7 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                     "dateSigned": '2016-05-22T13:32:25.774673+02:00',
                     "documents": [{
                         'datePublished': "2016-06-22T13:32:25.774673+02:00",
-                        }]
+                    }]
                 }
             ],
         }
@@ -223,7 +200,7 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
         })
         self.utility.db.save(doc)
         mock_csv = mock.mock_open()
-        self.utility.counter = [0 for _ in self.utility.payments]
+        self.utility.counter = [0 for _ in self.utility.config.payments]
         with mock.patch('__builtin__.open', mock_csv):
             self.utility.run()
             self.assertEqual(
@@ -238,8 +215,8 @@ class ReportRefundsUtilityTestCase(BaseTenderUtilityTest):
                 ','.join([str(i) for i in self.utility.counter]), '\r\n'
             ))
             handler.write.assert_any_call('{}{}'.format(
-                ','.join([str(c*p) for c, p in zip(
-                    self.utility.counter, self.utility.payments)]
+                ','.join([str(c * p) for c, p in zip(
+                    self.utility.counter, self.utility.config.payments)]
                 ), '\r\n'
             ))
             del self.utility.db[doc['_id']]

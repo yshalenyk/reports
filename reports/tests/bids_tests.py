@@ -1,52 +1,46 @@
 import unittest
 import mock
 from reports.tests.base import BaseBidsUtilityTest
-from reports.utilities.bids import BidsUtility
 from copy import copy
-from reports.tests.base import test_config
 
 
 test_bids_invalid = [
-            [{
-                "owner": "test",
-                "date": "2016-03-17T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac",
-            }],
-            [{
-                "status": "invalid",
-                "owner": "test",
-                "date": "2016-04-17T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac"
-            }]]
+    [{
+        "owner": "test",
+        "date": "2016-03-17T13:32:25.774673+02:00",
+        "id": "44931d9653034837baff087cfc2fb5ac",
+    }],
+    [{
+        "status": "invalid",
+        "owner": "test",
+        "date": "2016-04-17T13:32:25.774673+02:00",
+        "id": "44931d9653034837baff087cfc2fb5ac"
+    }]
+]
 
 test_bids_valid = [
-            [{
-                "owner": "test",
-                "date": "2016-04-17T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac",
-            }],
-            [{
-                "owner": "test",
-                "date": "2016-05-05T13:32:25.774673+02:00",
-                "id": "44931d9653034837baff087cfc2fb5ac",
-            }],
+    [{
+        "owner": "test",
+        "date": "2016-04-17T13:32:25.774673+02:00",
+        "id": "44931d9653034837baff087cfc2fb5ac",
+    }],
+    [{
+        "owner": "test",
+        "date": "2016-05-05T13:32:25.774673+02:00",
+        "id": "44931d9653034837baff087cfc2fb5ac",
+    }],
 
-            [{
-                "owner": "test",
-                "date": "2016-05-10T13:32:25.774673+02:00",
-                "id": "f55962b1374b43ddb886821c0582bc7f"
-            }]]
+    [{
+        "owner": "test",
+        "date": "2016-05-10T13:32:25.774673+02:00",
+        "id": "f55962b1374b43ddb886821c0582bc7f"
+    }]]
 
 
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
 
 
 class ReportBidsViewTestCase(BaseBidsUtilityTest):
-
-    def setUp(self):
-        super(ReportBidsViewTestCase, self).setUp()
-        self.utility.headers = [u"tender", u"tenderID", u"lot",
-                                u"value", u"currency", u"bid", u"bill"]
 
     def test_bids_view_invalid_date(self):
         data = {
@@ -172,11 +166,11 @@ class ReportBidsViewTestCase(BaseBidsUtilityTest):
     def test_bids_view_with_lots(self):
         data = {
             "enquiryPeriod": {
-                 "startDate": '2016-04-17T13:32:25.774673+02:00',
-             },
+                "startDate": '2016-04-17T13:32:25.774673+02:00',
+            },
             "awardPeriod": {
                 "startDate": test_award_period,
-             },
+            },
 
             "lots": [
                 {
@@ -191,15 +185,15 @@ class ReportBidsViewTestCase(BaseBidsUtilityTest):
             ],
             "bids": [
                 {
-                   "date": "2016-04-07T16:36:58.983102+03:00",
-                   "owner": "test",
-                   "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                   "lotValues": [
-                       {
-                           "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                           "date": "2016-04-07T16:36:58.983062+03:00",
-                       }
-                   ],
+                    "date": "2016-04-07T16:36:58.983102+03:00",
+                    "owner": "test",
+                    "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                    "lotValues": [
+                        {
+                            "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                            "date": "2016-04-07T16:36:58.983062+03:00",
+                        }
+                    ],
                 }
             ],
         }
@@ -207,14 +201,6 @@ class ReportBidsViewTestCase(BaseBidsUtilityTest):
 
 
 class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
-
-    def setUp(self):
-        super(ReportBidsUtilityTestCase, self).setUp()
-        self.utility = BidsUtility()
-        self.utility.init_from_args('test', [], test_config)
-
-    def tearDown(self):
-        del self.server[self.db_name]
 
     def test_bids_utility_output(self):
         data = {
@@ -230,25 +216,28 @@ class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
         self.utility.db.save(doc)
         with mock.patch('__builtin__.open', mock_csv):
             self.utility.run()
-            mock_csv.assert_called_once_with('test/test@---bids.csv', 'w')
-            handler = mock_csv()
-            handler.write.assert_any_call(
-                'tender,tenderID,lot,value,currency,bid,bill\r\n'
-            )
-            handler.write.assert_any_call(
-                '0006651836f34bcda9a030c0bf3c0e6e,'
-                'UA-2016-11-12-000150,,1000,UAH,'
-                '44931d9653034837baff087cfc2fb5ac,7.0\r\n'
-            )
+            calls = [
+                mock.call('test/test@---bids.csv', 'w'),
+                mock.call().__enter__(),
+                mock.call().write(
+                    str(','.join(self.utility.headers) + '\r\n')),
+                mock.call().write(
+                    '0006651836f34bcda9a030c0bf3c0e6e,'
+                    'UA-2016-11-12-000150,,1000,UAH,'
+                    '44931d9653034837baff087cfc2fb5ac,,7.0\r\n'
+                ),
+                mock.call().__exit__(None, None, None),
+            ]
+            mock_csv.assert_has_calls(calls)
 
     def test_bids_utility_output_with_lots(self):
         data = {
             "enquiryPeriod": {
-                 "startDate": '2016-04-17T13:32:25.774673+02:00',
-             },
+                "startDate": '2016-04-17T13:32:25.774673+02:00',
+            },
             "awardPeriod": {
                 "startDate": test_award_period,
-             },
+            },
 
             "lots": [
                 {
@@ -263,15 +252,15 @@ class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
             ],
             "bids": [
                 {
-                   "date": "2016-04-07T16:36:58.983102+03:00",
-                   "owner": "test",
-                   "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                   "lotValues": [
-                       {
-                           "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                           "date": "2016-04-07T16:36:58.983062+03:00",
-                       }
-                   ],
+                    "date": "2016-04-07T16:36:58.983102+03:00",
+                    "owner": "test",
+                    "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                    "lotValues": [
+                        {
+                            "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                            "date": "2016-04-07T16:36:58.983062+03:00",
+                        }
+                    ],
                 }
             ],
         }
@@ -281,16 +270,19 @@ class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
         self.utility.db.save(doc)
         with mock.patch('__builtin__.open', mock_csv):
             self.utility.run()
-            mock_csv.assert_called_once_with('test/test@---bids.csv', 'w')
-            handler = mock_csv()
-            handler.write.assert_any_call(
-                'tender,tenderID,lot,value,currency,bid,bill\r\n'
-            )
-            handler.write.assert_any_call(
-                '0006651836f34bcda9a030c0bf3c0e6e,'
-                'UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,'
-                '2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,7.0\r\n'
-            )
+            calls = [
+                mock.call('test/test@---bids.csv', 'w'),
+                mock.call().__enter__(),
+                mock.call().write(
+                    str(','.join(self.utility.headers) + '\r\n')),
+                mock.call().write(
+                    '0006651836f34bcda9a030c0bf3c0e6e,'
+                    'UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,'
+                    '2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,,7.0\r\n'
+                ),
+                mock.call().__exit__(None, None, None),
+            ]
+            mock_csv.assert_has_calls(calls)
 
 
 if __name__ == '__main__':

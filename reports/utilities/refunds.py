@@ -11,7 +11,6 @@ class RefundsUtility(BaseTendersUtility):
         super(RefundsUtility, self).__init__('refunds')
         self.headers = thresholds_headers(self.config.thresholds)
         self.counter = [0 for _ in self.config.payments]
-        self._rows = [self.counter, self.config.payments]
 
     def row(self, record):
         tender = record.get('tender', '')
@@ -56,6 +55,7 @@ class RefundsUtility(BaseTendersUtility):
     def rows(self):
         for resp in self.response:
             self.row(resp['value'])
+        self._rows = [self.counter, self.config.payments]
         self._rows.append(
             [c * v for c, v in zip(self.counter, self.config.payments)]
         )
