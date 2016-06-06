@@ -8,6 +8,7 @@ import arrow
 import time
 import yaml
 import requests
+import argparse
 import requests_cache
 from requests.exceptions import RequestException
 from yaml.scanner import ScannerError
@@ -201,6 +202,14 @@ class BaseTendersUtility(BaseUtility):
             help='Kind filtering functionality. '
                  'Usage: --kind <include, exclude, one>=<kinds>'
         )
+        parser.add_argument(
+            '-i',
+            '--ignore',
+            dest='ignore',
+            type=argparse.FileType('r'),
+            help='File with ids that should be skipped'
+        )
+
         args = parser.parse_args()
         self.ignore = set()
         self._initialize(

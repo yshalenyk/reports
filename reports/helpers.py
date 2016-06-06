@@ -37,13 +37,6 @@ def get_cmd_parser():
              'By default report will be generated from all database'
     )
     report.add_argument(
-        '-i',
-        '--ignore',
-        dest='ignore',
-        type=argparse.FileType('r'),
-        help='File with ids that should be skipped'
-    )
-    report.add_argument(
         '-t',
         '--timezone',
         dest='timezone',
@@ -106,7 +99,7 @@ class Kind(argparse.Action):
                  help=None,
                  metavar=None):
 
-        self.kinds = set(['general', 'special', 'defence'])
+        self.kinds = set(['general', 'special', 'defence', '_kind'])
         super(Kind, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -145,6 +138,6 @@ class Kind(argparse.Action):
 
     def one(self, kinds):
         for kind in kinds:
-            if kind not in ['general', 'special', 'exclude', 'other']:
-                self.parser.error('Allowed only general, special, exclude, other')
+            if kind not in ['general', 'special', 'exclude', 'other', '_kind']:
+                self.parser.error('Allowed only general, special, exclude, other and _kind')
         self.kinds = set([kind])
