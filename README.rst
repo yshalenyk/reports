@@ -13,7 +13,7 @@ Use following commands to build :
 
 ``bin/buildout -N``
 
-Uasage
+Usage
 ------
 
 Threre are four utilities for renerating report : **bids**,
@@ -42,8 +42,6 @@ General options for all utilities:
       -p PERIOD [PERIOD ...], --period PERIOD [PERIOD ...]
                             Specifies period for billing report. By default report
                             will be generated from all database
-      -i IGNORE, --ignore IGNORE
-                            File with ids that should be skipped
       -t TIMEZONE, --timezone TIMEZONE
                             Timezone. Default "Europe/Kiev"
 
@@ -79,24 +77,24 @@ Run script to generate report to broker test with period that starts at
 
 ::
 
-    `bin/bids -b test -p 2016-01-01 2016-02-01`:
+    bin/bids -b test -p 2016-01-01 2016-02-01:
 
 Run script with changed default timezone.
 
 ::
 
-    `bin/bids -b test -p 2016-01-01 2016-02-01 -t 'Europe/Amsterdam'`
+    bin/bids -b test -p 2016-01-01 2016-02-01 -t Europe/Amsterdam
 
 Run script with but scip ids specified in the ignore.txt file.
 
 ::
 
-    `bin/tenders -b test -p 2015-01-01 2015-02-01 -i ignore.txt`
+    bin/tenders -b test -p 2015-01-01 2015-02-01 -i ignore.txt
 
 To filter kinds use ``include``, ``exclude`` or ``one``.
 
 ::
 
-    `bin/tenders -b test --kind include=other[exclude=general][one=general]`
+    bin/tenders -b test --kind include=other[exclude=general][one=general]
 
 Report documents will be placed to ``var/reports/`` directory.
