@@ -5,12 +5,12 @@ import json
 import requests_cache
 
 
-requests_cache.install_cache('exchange_chache')
+requests_cache.install_cache('exchange_cache')
 
 
 def get_cmd_parser():
     parser = argparse.ArgumentParser(
-        description="Openprocurement Billig"
+        description="Openprocurement Billing"
     )
     report = parser.add_argument_group('Report', 'Report parameters')
     report.add_argument(
@@ -99,7 +99,7 @@ class Kind(argparse.Action):
                  help=None,
                  metavar=None):
 
-        self.kinds = set(['general', 'special', 'defence', '_kind'])
+        self.kinds = set(['general', 'special', 'defense', '_kind'])
         super(Kind, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -138,6 +138,6 @@ class Kind(argparse.Action):
 
     def one(self, kinds):
         for kind in kinds:
-            if kind not in ['general', 'special', 'exclude', 'other', '_kind']:
-                self.parser.error('Allowed only general, special, exclude, other and _kind')
-        self.kinds = set([kind])
+            if kind not in ['general', 'special', 'defense', 'other', '_kind']:
+                self.parser.error('Allowed only general, special, defense, other and _kind')
+        self.kinds = set(kinds)
