@@ -13,7 +13,7 @@ function(doc) {
     }
 
     var find_kind = function(tender) {
-        var kind = tender.procuringEntity.kind || '_kind'
+        var kind = tender.procuringEntity.kind || '_kind';
         return kind;
     }
 
@@ -40,64 +40,108 @@ function(doc) {
 
         var owner = tender.owner;
         var kind = find_kind(tender);
+        var date = '';
 
-
-        if (tender.status === 'cancelled') {
-            var date = '';
-            tender.revisions.forEach(function(revision) {
-                if(revision.author === owner ) {
-                    revision.changes.forEach(function(change) {
-                        if (change.path === '/status') {
-                            if(!(date) || (date < revision.date)) {
-                                date = revision.date;
-                            }
-                        }
+        if ('lots' in tender) {
+            if (tender.status === 'cancelled') {
+                date = max_date(tender.cancellations[0]);
+                tender.lots.forEach(function(lot){
+                    emit([owner, date, lot.id], {
+                        tender: tender._id,
+                        lot: lot.id,
+                        value: lot.value.amount,
+                        currency: lot.value.currency,
+                        kind: kind,
+                        status: tender.status,
+                        datemodified: tender.dateModified,
+                        startdate: startDate,
+                        tenderID: tender.tenderID,
                     });
-                }
-            });
-        } else {
-
-            if (!('awards' in tender)) {
-                var date =  (tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate;
+                });
             } else {
-                var date = '';
-                tender.awards.forEach(function(award) {
-                    if (!(date) || (date < award.complaintPeriod.endDate)) {
-                        date = award.complaintPeriod.endDate;
+                tender.lots.forEach(function(lot){
+                    if (lot.status === 'cancelled') {
+                        //find cancellation date
+                        tender.cancellations.forEach(function(cancellation) {
+                            if ((cancellation.cancellationOf === 'lot') && (cancellation.relatedLot === lot.id)) {
+                                date = max_date(cancellation);
+                                emit([owner, date, lot.id], {
+                                    tender: tender._id,
+                                    lot: lot.id,
+                                    value: lot.value.amount,
+                                    currency: lot.value.currency,
+                                    kind: kind,
+                                    status: tender.status,
+                                    datemodified: tender.dateModified,
+                                    startdate: startDate,
+                                    tenderID: tender.tenderID,
+                                });
+                            }
+                        });
+                    } else {
+                        if ('awards' in tender) {
+                            //find date in award
+                            tender.awards.forEach(function(award){
+                                if (award.lotID === lot.id) {
+                                    date = award.complaintPeriod.endDate;
+                                    var return_date = (new Date(date)).toISOString().slice(0, 23);
+                                    emit([owner, return_date, lot.id], {
+                                        tender: tender._id,
+                                        lot: lot.id,
+                                        value: lot.value.amount,
+                                        currency: lot.value.currency,
+                                        kind: kind,
+                                        status: tender.status,
+                                        datemodified: tender.dateModified,
+                                        startdate: startDate,
+                                        tenderID: tender.tenderID,
+                                    });
+                                }
+                            });
+                        } else {
+                            date = (new Date((tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate)).toISOString().slice(0, 23);
+                            emit([owner, date, lot.id], {
+                                tender: tender._id,
+                                lot: lot.id,
+                                value: lot.value.amount,
+                                currency: lot.value.currency,
+                                kind: kind,
+                                status: tender.status,
+                                datemodified: tender.dateModified,
+                                startdate: startDate,
+                                tenderID: tender.tenderID,
+                            });
+                        }
                     }
                 });
             }
-        }
-        if (!date) {
-            return;
-        }
-
-        var return_date = (new Date(date)).toISOString().slice(0, 23);
-        if ('lots' in tender) {
-            tender.lots.forEach(function(lot) {
-                emit([owner, return_date], {
+        } else {
+            if (tender.status === 'cancelled') {
+                date = max_date(tender.cancellations[0]);
+                emit([owner, date], {
                     tender: tender._id,
-                    lot: lot.id,
-                    value: lot.value.amount,
-                    currency: lot.value.currency,
+                    value: tender.value.amount,
+                    currency: tender.value.currency,
                     kind: kind,
                     status: tender.status,
                     datemodified: tender.dateModified,
                     startdate: startDate,
                     tenderID: tender.tenderID,
                 });
-            });
-        } else {
-            emit([owner, return_date], {
-                tender: tender._id,
-                value: tender.value.amount,
-                currency: tender.value.currency,
-                kind: kind,
-                status: tender.status,
-                datemodified: tender.dateModified,
-                startdate: startDate,
-                tenderID: tender.tenderID,
-            }); 
+            } else {
+                date = (new Date((tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate)).toISOString().slice(0, 23);
+                emit([owner, date], {
+                    tender: tender._id,
+                    value: tender.value.amount,
+                    currency: tender.value.currency,
+                    kind: kind,
+                    status: tender.status,
+                    datemodified: tender.dateModified,
+                    startdate: startDate,
+                    tenderID: tender.tenderID,
+                });
+
+            }
         }
     }
 
