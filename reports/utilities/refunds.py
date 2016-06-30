@@ -31,6 +31,10 @@ class RefundsUtility(BaseTendersUtility):
         if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
+        if record.get('status') not in self.statuses:
+            self.Logger.info('Scip tender {} by status'.format(tender))
+            return
+
         value = float(record.get("value", 0))
         if record[u'currency'] != u'UAH':
             old = value
