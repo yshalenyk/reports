@@ -17,7 +17,7 @@ from config import Config
 from design import bids_owner_date, tenders_owner_date
 from couchdb.design import ViewDefinition
 from logging import getLogger
-from reports.helpers import get_cmd_parser, create_db_url, Kind
+from reports.helpers import get_cmd_parser, create_db_url, Kind, Status
 
 
 views = [bids_owner_date, tenders_owner_date]
@@ -203,6 +203,14 @@ class BaseTendersUtility(BaseUtility):
                  'Usage: --kind <include, exclude, one>=<kinds>'
         )
         parser.add_argument(
+            '--status',
+            metavar='status',
+            action=Status,
+            help='Tenders statuses filtering functionality. '
+                 'Usage: --status <include, exclude, one>=<statuses>'
+        )
+
+        parser.add_argument(
             '-i',
             '--ignore',
             dest='ignore',
@@ -219,5 +227,6 @@ class BaseTendersUtility(BaseUtility):
             args.timezone
         )
         self.kinds = args.kind
+        self.statuses = args.status
         if args.ignore:
             self.ignore = [line.strip('\n') for line in args.ignore]

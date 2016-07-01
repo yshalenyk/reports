@@ -141,3 +141,58 @@ class Kind(argparse.Action):
             if kind not in ['general', 'special', 'defense', 'other', '_kind']:
                 self.parser.error('Allowed only general, special, defense, other and _kind')
         self.kinds = set(kinds)
+
+
+class Status(argparse.Action):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+
+        self.statuses = set(['complete'])
+        super(Status, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=self.statuses,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(
+            self, parser, args, values, option_string=None):
+        options = values.split('=')
+        self.parser = parser
+        if len(options) < 2:
+            parser.error("usage <option>=<kind>")
+        action = options[0]
+        statuses = options[1].split(',')
+        try:
+            getattr(self, action)(statuses)
+        except AttributeError:
+            self.parser.error("<option> should be one from [include, exclude, one]")
+
+        setattr(args, self.dest, self.statuses)
+
+    def include(self, sts):
+        for status in sts:
+            self.statuses.add(status)
+
+    def exclude(self, sts):
+        for status in sts:
+            if status in self.statuses:
+                self.statuses.remove(status)
+
+    def one(self, sts):
+        self.statuses = set(sts)
