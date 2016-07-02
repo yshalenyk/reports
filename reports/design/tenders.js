@@ -10,6 +10,7 @@ function(doc) {
     var kind = doc.procuringEntity.kind || "_kind";
     var owner = doc.owner;
     var tender_id = doc._id;
+    var tender_status = doc.status;
     var tenderID = doc.tenderID;
     var datemodified = doc.dateModified;
 
@@ -53,9 +54,21 @@ function(doc) {
     var find_lot_unsuccessful_date = function(lot_id, tender) {
         var date = '';
         if ('awards' in tender) {
-            date = new Date((tender.awards[tender.awards.length - 1]).complaintPeriod.endDate );
+            var lotDate = '';
+            tender.awards.forEach(function(award) {
+                if (award.lotID === lot_id) {
+                    if (!(lotDate) || (lotDate < award.complaintPeriod.endDate)) {
+                        lotDate = award.complaintPeriod.endDate;
+                    }
+                }
+            });
+            date = new Date(lotDate);
         } else {
             date = (new Date((tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate));
+
+        }
+        if (!date) {
+            return find_tender_unsuccessful_date(tender);
 
         }
         return date_normalize(date);
@@ -80,11 +93,13 @@ function(doc) {
 
 
     var find_tender_cancellation_date = function(tender) {
-        var date = max_date(tender.cancellations[0]);
-
-        //log(date)
-
-        return date_normalize( date );
+        var dates = [];
+        ( tender.cancellations || [] ).forEach(function(cancellation)) {
+            if (cancellation.status === 'active' && cancellation.cancellationOf === 'tender') {
+                dates.push(max_date(cancellation));
+            }
+        }
+        return date_normalize(new Date(Math.min.apply(null, dates));
     }
     //*****************************************************************************************************************
 
@@ -96,7 +111,7 @@ function(doc) {
             value: lot.value.amount,
             currency: lot.value.currency,
             kind: kind,
-            status: lot.status,
+            status: tender_status,
             datemodified: datemodified,
             startdate: startDate,
             tenderID: tenderID,
@@ -112,7 +127,7 @@ function(doc) {
             value: tender.value.amount,
             currency: tender.value.currency,
             kind: kind,
-            status: tender.status,
+            status: tender_status,
             datemodified: datemodified,
             startdate: startDate,
             tenderID: tenderID,
@@ -137,23 +152,31 @@ function(doc) {
                         var date = find_lot_unsuccessful_date(lot.id, tender);
                     }    
                 } else {
-                    var contract_id = '';
-                    var date = '';
-                    ( tender.awards || []).forEach(function(award) {
-                        if (award.lotID === lot.id) {
-                            contract_id = award.contractID;
+                    if (tender_status === 'cancelled') {
+                        if ('date' in tender) {
+                            var date = date_normalize(new Date(tender.date));
+                        } else {
+                            var date = find_tender_cancellation_date(tender);
                         }
-                    });
-                    (tender.contracts || []).forEach(function(contract) {
-                        if (contract.status === 'active') {
-                            if (contract.id === contract_id) {
-                                var d = max_date(contract);
-                                if ( !date ) {return;}
-                                date = date_normalize(d);
+                    } else {
+                        var contract_id = '';
+                        var date = '';
+                        ( tender.awards || []).forEach(function(award) {
+                            if (award.lotID === lot.id) {
+                                contract_id = award.contractID;
                             }
+                        });
+                        (tender.contracts || []).forEach(function(contract) {
+                            if (contract.status === 'active') {
+                                if (contract.id === contract_id) {
+                                    var d = max_date(contract);
+                                    if ( !date ) {return;}
+                                    date = date_normalize(d);
+                                }
 
-                        }
-                    });
+                            }
+                        });
+                    }
                 }
                 if ( !date ) {return;}
                 emit_lot_data(lot, date)
