@@ -1,3 +1,4 @@
+
 function(doc) {
 
     //tender checks
@@ -18,7 +19,7 @@ function(doc) {
     var max_date = function (obj) {
         //helper function to find max date in object
         var dates = [];
-       
+
         ['date', 'dateSigned', 'documents'].forEach(function(field){
             var date = obj[field] || '';
             if (date) {
@@ -40,7 +41,7 @@ function(doc) {
         return date.toISOString().slice(0, 23);
     };
     //*****************************************************************************************************************
-    
+
     var find_tender_unsuccessful_date = function(tender) {
         if ('awards' in tender) {
             var date = new Date(Math.max.apply(null, tender.awards.map(function(award) { return new Date(award.complaintPeriod.endDate); })));
@@ -76,17 +77,17 @@ function(doc) {
     //*****************************************************************************************************************
 
     var find_lot_cancellation_date = function(lot_id, tender) {
-        var date = '';
+        var dates = [];
         tender.cancellations.forEach(function(cancellation) {
-            if (( cancellation.cancellationOf === 'lot' ) && (cancellation.relatedLot === lot_id)) {
-                date = max_date(cancellation);
+            if (( cancellation.cancellationOf === 'lot' ) && (cancellation.relatedLot === lot_id) && (cancellation.status === 'active')) {
+                dates.push(max_date(cancellation));
             }
         });
-        if (!date) {
+        if (dates.length === 0) {
             return find_tender_cancellation_date(tender);
         }
 
-        return date_normalize(date);
+        return date_normalize(new Date( Math.min.apply(null, dates) ));
     }
     //*****************************************************************************************************************
 
@@ -94,12 +95,12 @@ function(doc) {
 
     var find_tender_cancellation_date = function(tender) {
         var dates = [];
-        ( tender.cancellations || [] ).forEach(function(cancellation)) {
-            if (cancellation.status === 'active' && cancellation.cancellationOf === 'tender') {
+        ( tender.cancellations || [] ).forEach(function(cancellation) {
+            if (( cancellation.status === 'active' ) && ( cancellation.cancellationOf === 'tender' )) {
                 dates.push(max_date(cancellation));
             }
-        }
-        return date_normalize(new Date(Math.min.apply(null, dates));
+        });
+        return date_normalize(new Date(Math.min.apply(null, dates)));
     }
     //*****************************************************************************************************************
 
@@ -111,6 +112,7 @@ function(doc) {
             value: lot.value.amount,
             currency: lot.value.currency,
             kind: kind,
+            lot_status: lot.status,
             status: tender_status,
             datemodified: datemodified,
             startdate: startDate,
@@ -145,12 +147,15 @@ function(doc) {
                     } else {
                         var date = find_lot_cancellation_date(lot.id, tender);
                     }
+                    emit_lot_data(lot, date);
+
                 } else if (lot.status === 'unsuccessful') {
                     if ('date' in lot) {
                         var date = date_normalize(new Date(lot.date));
                     } else {
                         var date = find_lot_unsuccessful_date(lot.id, tender);
-                    }    
+                    }
+                    emit_lot_data(lot, date);
                 } else {
                     if (tender_status === 'cancelled') {
                         if ('date' in tender) {
@@ -158,54 +163,49 @@ function(doc) {
                         } else {
                             var date = find_tender_cancellation_date(tender);
                         }
+                        emit_lot_data(lot, date);
                     } else {
-                        var contract_id = '';
-                        var date = '';
                         ( tender.awards || []).forEach(function(award) {
                             if (award.lotID === lot.id) {
-                                contract_id = award.contractID;
+                                (tender.contracts || []).forEach(function(contract) {
+                                    if (award.id === contract.awardID) {
+                                        if (contract.status === 'active') {
+                                            var date = date_normalize(max_date(contract));
+                                            emit_lot_data(lot, date)
+                                        }
+                                    }
+                                });
                             }
                         });
-                        (tender.contracts || []).forEach(function(contract) {
+                 }
+                }});
+                } else {
+                    if (tender.status === "unsuccessful" ) {
+                        if ('date' in tender) {
+                            var date = date_normalize(new Date(tender.date));
+                        } else {
+                            var date = find_tender_unsuccessful_date(tender);
+                        }
+                        emit_tender_data(tender, date);
+                    } else if (tender.status === "cancelled") {
+                        if ('date' in tender) {
+                            var date = date_normalize(new Date(tender.date));
+                        } else {
+                            var date = find_tender_cancellation_date(tender);
+                        }
+                        emit_tender_data(tender, date);
+                    } else {
+                        ( tender.contracts || []).forEach(function(contract) {
                             if (contract.status === 'active') {
-                                if (contract.id === contract_id) {
-                                    var d = max_date(contract);
-                                    if ( !date ) {return;}
-                                    date = date_normalize(d);
-                                }
-
+                                var date = max_date(contract);
+                                emit_tender_data(tender, date_normalize( date ));
                             }
                         });
                     }
                 }
-                if ( !date ) {return;}
-                emit_lot_data(lot, date)
-            });//end of callback
-        } else {
-            if (tender.status === "unsuccessful" ) {
-                if ('date' in tender) {
-                    var date = date_normalize(new Date(tender.date));
-                } else {
-                    var date = find_tender_unsuccessful_date(tender);
-                }
-                emit_tender_data(tender, date);
-            } else if (tender.status === "cancelled") {
-                if ('date' in tender) {
-                    var date = date_normalize(new Date(tender.date));
-                } else {
-                    var date = find_tender_cancellation_date(tender);
-                }
-                emit_tender_data(tender, date);
-            } else {
-                ( tender.contracts || []).forEach(function(contract) {
-                    if (contract.status === 'active') {
-                        var date = max_date(contract);
-                        if (!date) {return;}
-                        emit_tender_data(tender, date_normalize( date ));
-                    }
-                });
-            }
-        }
-    } // emit_tender_data
+            } // emit_tender_data
+   
+
     find_tender_data(doc);
 }
+
