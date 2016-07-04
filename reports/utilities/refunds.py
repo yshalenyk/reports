@@ -15,6 +15,9 @@ class RefundsUtility(BaseTendersUtility):
     def row(self, record):
         tender = record.get('tender', '')
         lot = record.get('lot', '')
+        status = record.get('status', '')
+        lot_status = record.get('lot_status', '')
+
         if lot:
             if tender in self.ignore and lot in self.ignore:
                 self.Logger.info(
@@ -31,8 +34,8 @@ class RefundsUtility(BaseTendersUtility):
         if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
-        if record.get('status') not in self.statuses:
-            self.Logger.info('Scip tender {} by status'.format(tender))
+        if self.check_status(status, lot_status):
+            self.Logger.info('Scip tender {} by status {}'.format(tender, status))
             return
 
         value = float(record.get("value", 0))

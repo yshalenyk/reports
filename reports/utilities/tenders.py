@@ -8,13 +8,15 @@ class TendersUtility(BaseTendersUtility):
 
     def __init__(self):
         super(TendersUtility, self).__init__('tenders')
-        self.headers = ["tender", "tenderID","status", "lot", "currency",
+        self.headers = ["tender", "tenderID", "lot", "currency",
                         "kind", "value", "rate", "bill"]
 
     def row(self, record):
         rate = None
         tender = record.get('tender', '')
         lot = record.get('lot', '')
+        status = record.get('status', '')
+        lot_status = record.get('lot_status', '')
         if lot:
             if tender in self.ignore and lot in self.ignore:
                 self.Logger.info(
@@ -30,8 +32,8 @@ class TendersUtility(BaseTendersUtility):
         if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
-        if record.get('status') not in self.statuses:
-            self.Logger.info('Scip tender {} by status'.format(tender))
+        if self.check_status(status, lot_status):
+            self.Logger.info('Scip tender {} by status {}'.format(tender, status))
             return
         row = list(record.get(col, '') for col in self.headers[:-2])
         value = float(record.get(u'value', 0))

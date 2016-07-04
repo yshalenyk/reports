@@ -157,7 +157,7 @@ class Status(argparse.Action):
                  help=None,
                  metavar=None):
 
-        self.statuses = set(['complete'])
+        self.statuses = {'action' : '', 'statuses': set([u'active', u'complete', u'active.awarded'])}
         super(Status, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -186,13 +186,16 @@ class Status(argparse.Action):
         setattr(args, self.dest, self.statuses)
 
     def include(self, sts):
+        self.statuses['action'] = 'include'
         for status in sts:
-            self.statuses.add(status)
+            self.statuses['statuses'].add(status)
 
     def exclude(self, sts):
+        self.statuses['action'] = 'exclude'
         for status in sts:
             if status in self.statuses:
-                self.statuses.remove(status)
+                self.statuses['statuses'].remove(status)
 
     def one(self, sts):
-        self.statuses = set(sts)
+        self.statuses['action'] = 'one'
+        self.statuses['statuses'] = set(sts)

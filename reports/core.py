@@ -227,6 +227,23 @@ class BaseTendersUtility(BaseUtility):
             args.timezone
         )
         self.kinds = args.kind
-        self.statuses = args.status
+        self.statuses = args.status['statuses']
+        self.status_action = args.status['action']
         if args.ignore:
             self.ignore = [line.strip('\n') for line in args.ignore]
+
+    def check_status(self, tender_status, lot_status):
+        if not self.status_action:
+            if lot_status:
+                if lot_status not in self.statuses:
+                    return True
+            if tender_status not in self.statuses:
+                return True
+        else:
+            if lot_status:
+                if lot_status not in self.statuses:
+                    return True
+            else:
+                if tender_status not in self.statuses:
+                    return True
+        return False
