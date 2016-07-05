@@ -1,8 +1,8 @@
 from setuptools import setup
 
 install_requires = [
-    'couchdb>=1.0.1',
-    'dateparser>=0.3.4',
+    'couchdb',
+    'dateparser',
     'pbkdf2',
     'requests',
     'requests_cache',
@@ -12,6 +12,9 @@ install_requires = [
     'arrow',
 ]
 
+test_requires = install_requires + [
+    'mock',
+]
 
 setup(
     name='reports',
@@ -19,6 +22,9 @@ setup(
     packages=[
         'reports',
     ],
+    author_email='info@quintagroup.com',
+    license='Apache License 2.0',
+    url='https://github.com/openprocurement/reports',
     entry_points={
         'console_scripts': [
             'bids = reports.utilities.bids:run',
@@ -29,5 +35,10 @@ setup(
             'zip = reports.utilities.zip:run',
         ]
     },
-    install_requires=install_requires
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=install_requires,
+    tests_require=test_requires,
+    test_suite='reports.tests.main.suite',
+#    extras_require={'test': test_requires},
 )
