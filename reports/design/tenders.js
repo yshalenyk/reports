@@ -55,24 +55,19 @@ function(doc) {
     var find_lot_unsuccessful_date = function(lot_id, tender) {
         var date = '';
         if ('awards' in tender) {
-            var lotDate = '';
             tender.awards.forEach(function(award) {
                 if (award.lotID === lot_id) {
-                    if (!(lotDate) || (lotDate < award.complaintPeriod.endDate)) {
-                        lotDate = award.complaintPeriod.endDate;
+                    if (!(date) || (date < award.complaintPeriod.endDate)) {
+                        date = award.complaintPeriod.endDate;
                     }
                 }
             });
-            date = new Date(lotDate);
-        } else {
-            date = (new Date((tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate));
-
-        }
+        } 
         if (!date) {
-            return find_tender_unsuccessful_date(tender);
+            date = (tender.qualificationPeriod || {}).endDate || (tender.tenderPeriod || {}).endDate;
 
         }
-        return date_normalize(date);
+        return date_normalize(new Date(date));
     }
     //*****************************************************************************************************************
 
@@ -138,6 +133,8 @@ function(doc) {
     //*****************************************************************************************************************
     var find_tender_data = function(tender) {
         //main entry
+
+        if (!('bids' in tender)) { return; }
 
         if ("lots" in tender) {
             tender.lots.forEach(function(lot) {
