@@ -22,6 +22,7 @@ setup(
     packages=[
         'reports',
     ],
+    author='Quintagroup, Ltd.',
     author_email='info@quintagroup.com',
     license='Apache License 2.0',
     url='https://github.com/openprocurement/reports',
