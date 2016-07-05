@@ -24,5 +24,11 @@ class ValueNormalizationTestCase(unittest.TestCase):
             )
             self.assertEqual(20, value)
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ValueNormalizationTestCase))
+    return suite
+
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(defaultTest='suite')

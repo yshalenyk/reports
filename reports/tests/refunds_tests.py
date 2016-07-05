@@ -221,6 +221,11 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
             ))
             del self.utility.db[doc['_id']]
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ReportRefundsUtilityTestCase))
+    return suite
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(defaultTest='suite')

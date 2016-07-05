@@ -220,6 +220,11 @@ class ReportInvoicesUtilityTestCase(BaseInvoicesUtilityTest):
             ))
             del self.utility.db[doc['_id']]
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ReportInvoicesUtilityTestCase))
+    return suite
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(defaultTest='suite')

@@ -284,6 +284,12 @@ class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
             ]
             mock_csv.assert_has_calls(calls)
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ReportBidsViewTestCase))
+    suite.addTest(unittest.makeSuite(ReportBidsUtilityTestCase))
+    return suite
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(defaultTest='suite')
