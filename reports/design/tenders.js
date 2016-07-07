@@ -118,8 +118,6 @@ function(doc) {
                     if (!( this.tender_handler.tender_cancellation_date < (new Date(this.tender_handler.bids_disclosure_standstill)) )) {
                         this.lot_date = this.tender_handler.tender_cancellation_date;
                     }
-                } else if (tender.status === 'unsuccessful') {
-                    this.lot_date = this.tender_handler.tender_unsuccessful_date;
                 } else {
                     var lotDate = '';
                     ( tender.awards || [] ).forEach(function(award) {
