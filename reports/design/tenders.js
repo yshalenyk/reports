@@ -74,8 +74,8 @@ function(doc) {
         
         switch(this.status) {
             case 'unsuccessful':
+                var lot_unsuccessful = '';
                 if ('awards' in tender) {
-                    var lot_unsuccessful = '';
                     tender.awards.forEach(function(award) {
                         if (award.lotID === lot.id) {
                             if (!(lot_unsuccessful) || (lot_unsuccessful < award.complaintPeriod.endDate)) {
@@ -83,8 +83,8 @@ function(doc) {
                             }
                         }
                     });
-                    this.lot_date = new Date( lot_unsuccessful || this.tender_handler.bids_disclosure_standstill );
                 } 
+                this.lot_date = new Date( lot_unsuccessful || this.tender_handler.bids_disclosure_standstill );
                 break;
             case 'cancelled':
                 var lot_cancelled = '';
