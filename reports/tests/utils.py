@@ -28,9 +28,9 @@ test_data = {
         "id": "3d5182c5a0424a4f8508da712affa82f"
     }],
     "bids": [{
-        "owner": "",
-        "date": "",
-        "id": ""
+        "owner": "test",
+        "date": "data",
+        "id": "some_id"
     }],
     "value": {
         "currency": "UAH",
@@ -64,4 +64,9 @@ def get_mock_parser():
         return_value='test')
     type(mock_parse.return_value).period = mock.PropertyMock(
         return_value=[])
+    type(mock_parse.return_value).kind = mock.PropertyMock(
+        return_value=['kind', 'general'])
+    type(mock_parse.return_value).status = mock.PropertyMock(
+            return_value={'action': '', 'statuses': ['complete', 'active']})
+
     return mock_parse

@@ -233,7 +233,7 @@ class BaseTendersUtility(BaseUtility):
             self.ignore = [line.strip('\n') for line in args.ignore]
 
     def check_status(self, tender_status, lot_status):
-        if not self.status_action:
+        if self.status_action != 'one':
             if lot_status:
                 if lot_status not in self.statuses:
                     return True
@@ -241,7 +241,7 @@ class BaseTendersUtility(BaseUtility):
                 return True
         else:
             if lot_status:
-                if lot_status not in self.statuses:
+                if tender_status not in self.statuses and lot_status not in self.statuses:
                     return True
             else:
                 if tender_status not in self.statuses:
