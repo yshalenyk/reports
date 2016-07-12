@@ -90,13 +90,15 @@ function(doc) {
                                 });
                                 var audit = '';
                                 if ( audits.length > 0 ) {
-                                    audit = audits.reduce(function(prev_doc, curr_doc) {
-                                        return (prev_doc.dateModified > curr_doc.dateModified) ? curr_doc : prev_doc; 
-                                    });
+                                    if ( audits.length > 1 ) {
+                                        audit = audits.reduce(function(prev_doc, curr_doc) {
+                                            return (prev_doc.dateModified > curr_doc.dateModified) ? curr_doc : prev_doc; 
+                                        });
+                                    } else {
+                                        audit = audits[0] || null; 
+                                    }
                                 }
-                                log(audit);
-
-                                emitter.lot(bid.owner, date_normalize(bids_disclojure_date), bid, lot, audits[0]);
+                                emitter.lot(bid.owner, date_normalize(bids_disclojure_date), bid, lot, audit);
                             }
                         })
                     });
@@ -105,9 +107,17 @@ function(doc) {
             } else {
                 var audits = (tender.documents || []).filter(function(tender_doc) {
                     return tender_doc.title.match(/audit/);
-                })[0];
+                });
+                var audit = '';
+                if ( audits.length > 1 ) {
+                    audit = audits.reduce(function(prev_doc, curr_doc) {
+                        return (prev_doc.dateModified > curr_doc.dateModified) ? curr_doc : prev_doc; 
+                    });
+                } else {
+                    audit = audits[0] || null; 
+                }
                 ( bids || [] ).forEach(function(bid) {
-                    emitter.tender(bid.owner, date_normalize(bids_disclojure_date), bid, tender, audits);
+                    emitter.tender(bid.owner, date_normalize(bids_disclojure_date), bid, tender, audit);
                 });
             };
 

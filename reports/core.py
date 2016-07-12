@@ -182,6 +182,10 @@ class BaseBidsUtility(BaseUtility):
         except KeyError:
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
             self.Logger.info(msg)
+        except TypeError:
+            msg = 'falied to parse audit file of {} bid'.format(bid_id)
+            self.Logger.info(msg)
+
 
         if bid_id in self.skip_bids:
             self.Logger.info('Skipped fetched early bid: %s', bid_id)
