@@ -54,6 +54,8 @@ General options for all utilities:
     Optional arguments:
       --kind Kind           Kind filtering functionality. Usage: --kind <include,
                             exclude, one>=<kinds>
+      --status status       Tenders statuses filtering functionality. Usage:
+                            --status <include, exclude, one>=<statuses>
       -i IGNORE, --ignore IGNORE
                             File with ids that should be skipped
 
