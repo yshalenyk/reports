@@ -118,10 +118,10 @@ class BaseUtility(object):
         end = ''
         if self.start_date:
             start = arrow.get(parse(self.start_date))\
-                .to('Europe/Kiev').strftime("%m-%d")
+                .to('Europe/Kiev').strftime("%Y-%m-%d")
         if self.end_date:
             end = arrow.get(parse(self.end_date))\
-                .to('Europe/Kiev').strftime("%m-%d")
+                .to('Europe/Kiev').strftime("%Y-%m-%d")
         name = "{}@{}--{}-{}.csv".format(
             self.broker,
             start,
