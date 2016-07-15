@@ -186,7 +186,6 @@ class BaseBidsUtility(BaseUtility):
             msg = 'falied to parse audit file of {} bid'.format(bid_id)
             self.Logger.info(msg)
 
-
         if bid_id in self.skip_bids:
             self.Logger.info('Skipped fetched early bid: %s', bid_id)
             return False
@@ -198,6 +197,8 @@ class BaseTendersUtility(BaseUtility):
     def __init__(self, operation):
         super(BaseTendersUtility, self).__init__(operation, rev=True)
         self.view = 'report/tenders_owner_date'
+        self.tenders_to_ignore = []
+        self.lots_to_ignore = []
         parser = get_cmd_parser()
         parser.add_argument(
             '--kind',
@@ -234,7 +235,11 @@ class BaseTendersUtility(BaseUtility):
         self.statuses = args.status['statuses']
         self.status_action = args.status['action']
         if args.ignore:
-            self.ignore = [line.strip('\n') for line in args.ignore]
+            [
+                [self.tenders_to_ignore.append(line.strip('\n').split(',')[0]),
+                    self.lots_to_ignore.append(line.strip('\n').split(',')[1])]
+                for line in args.ignore.readlines()
+            ]
 
     def check_status(self, tender_status, lot_status):
         if lot_status:

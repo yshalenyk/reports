@@ -19,23 +19,23 @@ class RefundsUtility(BaseTendersUtility):
         lot_status = record.get('lot_status', '')
 
         if lot:
-            if tender in self.ignore and lot in self.ignore:
+            if tender in self.tenders_to_ignore and lot in self.lots_to_ignore:
                 self.Logger.info(
-                    'Scip tender {} with lot {} by'
+                    'Skip tender {} with lot {} by'
                     ' ignore list'.format(tender, lot)
                 )
                 return
         else:
-            if tender in self.ignore:
+            if tender in self.tenders_to_ignore:
                 self.Logger.info(
-                    'Scip tender {} by ignore list'.format(tender)
+                    'Skip tender {} by ignore list'.format(tender)
                 )
                 return
         if record.get('kind') not in self.kinds:
             self.Logger.info('Scip tender {} by kind'.format(tender))
             return
         if self.check_status(status, lot_status):
-            self.Logger.info('Scip tender {} by status {}'.format(tender, status))
+            self.Logger.info('Skip tender {} by status {}'.format(tender, status))
             return
 
         value = float(record.get("value", 0))
