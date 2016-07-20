@@ -35,7 +35,6 @@ def get_argument_parser():
     parser.add_argument(
         '-p',
         '--password',
-        required=True
     )
 
     parser.add_argument(
