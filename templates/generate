@@ -2,7 +2,9 @@
 
 
 BROKERS="{{ brokers }}"
-
+WORK_DIR="{{parts.buildout.directory}}/var/reports"
+BIN_DIR="{{parts.buildout.directory}}/bin"
+BUCKET="{{ bucket }}"
 
 parse_date () {
 
@@ -34,27 +36,30 @@ else
 fi
 
 
+
 echo "Generating reports form $START to $END"
 echo
 
 for broker in $BROKERS;do
 
+
+    FILE_PATTERN="${WORK_DIR}/${broker}@$START--$END"
     for cmd in bids tenders invoices refunds; do
         echo "Generating ${cmd} for ${broker}"
-        {{parts.buildout.directory}}/bin/"$cmd" -b "$broker" -p "$START" "$END"
+        "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END"
     done
 
-    for file in $(find {{parts.buildout.directory}}/var/reports/  -maxdepth 1 -regex "{{parts.buildout.directory}}/var/reports/$broker@$START--$END-\(tenders\|refunds\).csv"); do
+    for file in $(find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv"); do
         mv "$file" "${file}_contracts.csv"
     done
 
     for status in cancelled unsuccessful; do
 
         for cmd in tenders refunds; do 
-            {{parts.buildout.directory}}/bin/"$cmd" -b "$broker" -p "$START" "$END" --status one="$status"
+            "$BIN_DIR/$cmd" -b "$broker" -p "$START" "$END" --status one="$status"
         done
 
-        for file in $(find {{parts.buildout.directory}}/var/reports/  -maxdepth 1 -regex "{{parts.buildout.directory}}/var/reports/$broker@$START--$END-\(tenders\|refunds\).csv"); do
+        for file in $(find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv"); do
             mv "$file" "${file}_${status}.csv"
         done
 
@@ -63,10 +68,15 @@ for broker in $BROKERS;do
 
     passwd=$(pass {{ zip_path }}/$broker)
     echo "Creating zip file with bids and invoices for ${broker}"
-    find {{parts.buildout.directory}}/var/reports/  -maxdepth 1 -regex "{{parts.buildout.directory}}/var/reports/$broker@$START--$END-\(invoices\|bids\).csv"  | xargs -L 2 {{parts.buildout.directory}}/bin/zip -p "$passwd" -f 
+    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\).csv"  | xargs -L 2 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-bids-invoices.zip" -f 
 
 done
 
 
 echo "Creating zip archive with refunds"
-find {{parts.buildout.directory}}/var/reports/ -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).*.csv" | xargs bin/zip -z "$START-$END-tender-refunds.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).*.csv" | xargs "${BIN_DIR}/zip" -z "ALL@$START--$END-tender-refunds.zip" -f
+
+echo "Sending to s3"
+for file in find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec basename {}  \; do
+    s3cmd put "s3://$BUCKET/$file"
+done
