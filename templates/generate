@@ -25,7 +25,7 @@ parse_date () {
 
 put_and_sign () {
     file=$(basename "$1")
-    s3cmd put "s3://$BUCKET/$file"
+    s3cmd put "$1" "s3://$BUCKET/$file"
     s3cmd signurl "s3://$BUCKET/$file" +3600
 }
 
@@ -87,3 +87,4 @@ echo
 
 echo "Sending to s3"
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" | while read -r file;do  put_and_sign "$file"; done
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
