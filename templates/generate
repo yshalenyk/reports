@@ -8,31 +8,43 @@ BUCKET="{{ bucket }}"
 
 parse_date () {
 
-    IFS='-' read -r year month day< <(echo $1)
-    if [ -z $year ] || [ -z $month ] || [ -z $day ]; then
+    IFS='-' read -r year month day< <(echo "$1")
+    if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ]; then
         year=$(date +'%Y')
-        if [ -z $month ] && [ -z $day ]; then
-            month=$1
+        if [ -z "$month" ] && [ -z "$day" ]; then
+            month="$1"
             day="01"
         fi
-        if ! [ -z $month ] && [ -z $day ]; then
-            IFS='-' read -r month day< <(echo $1)
+        if ! [ -z "$month" ] && [ -z "$day" ]; then
+            IFS='-' read -r month day< <(echo "$1")
         fi
     fi
 
-    echo $(date -d"$year-$month-$day" +'%Y-%m-%d')
+    date -d"$year-$month-$day" +'%Y-%m-%d'
+}
+
+put_and_sign () {
+    file=$(basename "$1")
+    s3cmd put "s3://$BUCKET/$file"
+    s3cmd signurl "s3://$BUCKET/$file" +3600
+}
+
+
+move_to () {
+    file="${1%.*}"
+    mv "$1" "${1%.*}.$2.csv" 
 }
 
 if [ -z "$1" ]; then
     START="$(date -d'-1 month' +'%Y-%m')-01"
 else
-    START=$(parse_date $1)
+    START="$(parse_date "$1")"
 fi
 
 if [ -z "$2" ]; then
     END="$(date  +'%Y-%m')-01"
 else
-    END=$(parse_date $2)
+    END="$(parse_date "$2")"
 fi
 
 
@@ -49,9 +61,7 @@ for broker in $BROKERS;do
         "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END"
     done
 
-    for file in $(find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv"); do
-        mv "$file" "${file}_contracts.csv"
-    done
+    find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv" | while read -r file; do  move_to "$file" "contracts"; done
 
     for status in cancelled unsuccessful; do
 
@@ -59,24 +69,21 @@ for broker in $BROKERS;do
             "$BIN_DIR/$cmd" -b "$broker" -p "$START" "$END" --status one="$status"
         done
 
-        for file in $(find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv"); do
-            mv "$file" "${file}_${status}.csv"
-        done
+        find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv" | while read -r file; do  move_to "$file" "$status"; done
 
     done
 
 
-    passwd=$(pass {{ zip_path }}/$broker)
+    passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
-    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\).csv"  | xargs -L 2 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-bids-invoices.zip" -f 
-
+    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\).csv" | xargs -L 2 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-bids-invoices.zip" -f 
+    echo
 done
-
+echo
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).*.csv" | xargs "${BIN_DIR}/zip" -z "ALL@$START--$END-tender-refunds.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).\(contracts\|cancelled\|unsuccessful\).csv" | xargs "${BIN_DIR}/zip" -z "ALL@$START--$END-tender-refunds.zip" -f
+echo
 
 echo "Sending to s3"
-for file in find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec basename {}  \; do
-    s3cmd put "s3://$BUCKET/$file"
-done
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" | while read -r file;do  put_and_sign "$file"; done
