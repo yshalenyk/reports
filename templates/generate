@@ -5,6 +5,18 @@ BROKERS="{{ brokers }}"
 WORK_DIR="{{parts.buildout.directory}}/var/reports"
 BIN_DIR="{{parts.buildout.directory}}/bin"
 BUCKET="{{ bucket }}"
+ARNS=( {{arns}} )
+
+
+find_broker_arn () {
+
+    for arn in "${ARNS[@]}"; do
+        if [ "${arn%%=*}" == "$1" ]; then
+            echo "${arn##*=}"
+        fi
+    done
+}
+
 
 parse_date () {
 
@@ -25,8 +37,15 @@ parse_date () {
 
 put_and_sign () {
     file=$(basename "$1")
-    s3cmd put "$1" "s3://$BUCKET/$file"
-    s3cmd signurl "s3://$BUCKET/$file" +3600
+    broker="${file%%@*}"
+    arn=$(find_broker_arn "$broker")
+    s3cmd put -q "$1" "s3://$BUCKET/$file"
+
+    #sending notifications
+    url_for=$(s3cmd signurl "s3://$BUCKET/$file" +3600)
+    echo "URL for $broker is $url_for"
+    message=$(cat {{ parts.buildout.directory }}/templates/message.txt | sed "s/BROKER/$broker/; s/URL/$url_for/; s/EXPIRE/3600/; s/START/$START/; s/END/$END/")
+    aws sns publish --topic-arn "$arn" --message "$message" 
 }
 
 

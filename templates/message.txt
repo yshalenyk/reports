@@ -1,0 +1,7 @@
+Openprocurement Billng
+
+The url for downloading reports to BROKER for START--END:
+
+URL
+
+Url will expire in EXPIRE
