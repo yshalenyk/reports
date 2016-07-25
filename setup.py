@@ -10,6 +10,7 @@ install_requires = [
     'iso8601',
     'pyminizip',
     'arrow',
+    'boto3'
 ]
 
 test_requires = install_requires + [
@@ -34,6 +35,7 @@ setup(
             'invoices = reports.utilities.invoices:run',
             'init = reports.db_init:run',
             'zip = reports.utilities.zip:run',
+            'send = reports.utilities.send:run',
         ]
     },
     include_package_data=True,
