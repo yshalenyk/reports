@@ -41,13 +41,15 @@ class AWSClient(object):
 
     def __init__(self, config):
         fileConfig(config)
+        self.config = ConfigParser()
+        self.config.read(config)
         try:
             self.session = boto3.Session()
         except ClientError as e:
             print "Errori {}".format(e)
         self.Logger = logging.getLogger('AWS')
-        self.expires = config.get('aws', 'bucket')
-        self.bucket = config.get('aws', 'expires')
+        self.bucket = self.config.get('aws', 'bucket')
+        self.expires = self.config.get('aws', 'expires')
         self.s3 = self.session.client('s3')
         self.links = {}
 
@@ -59,7 +61,7 @@ class AWSClient(object):
                     file,
                     self.bucket,
                     key)
-            self.links[broker] = self.s3.generate_presignet_url(
+            self.links[broker] = self.s3.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': self.bucket, 'Key': key},
                 ExpiresIn=self.expires,
@@ -71,10 +73,8 @@ class AWSClient(object):
 def run():
     parser = get_parser()
     args = parser.parse_args()
-    config = ConfigParser()
-    config.read(args.config)
 
-    client = AWSClient(config)
+    client = AWSClient(args.config)
     pool = Pool(10)
     pool.map(client.send_file, args.files)
     for key, link in client.links.iteritems():
