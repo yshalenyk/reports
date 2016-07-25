@@ -1,7 +1,5 @@
-Openprocurement Billng
+<h1>Openprocurement Billng</h1>
 
-The url for downloading reports to BROKER for START--END:
-
-URL
-
+<p>The url for downloading reports to BROKER for START--END:</p>
+<a href="URL">Click here</a>
 Url will expire in EXPIRE
