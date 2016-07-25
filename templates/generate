@@ -35,19 +35,6 @@ parse_date () {
     date -d"$year-$month-$day" +'%Y-%m-%d'
 }
 
-put_and_sign () {
-    file=$(basename "$1")
-    broker="${file%%@*}"
-    arn=$(find_broker_arn "$broker")
-    s3cmd put -q "$1" "s3://$BUCKET/$file"
-
-    #sending notifications
-    url_for=$(s3cmd signurl "s3://$BUCKET/$file" +1200)
-    echo "URL for $broker is $url_for"
-    message=$(cat {{ parts.buildout.directory }}/templates/message.txt | sed "s,BROKER,$broker,; s,URL,$url_for,; s,EXPIRE,3600,; s,START,$START,; s,END,$END,")
-    aws sns publish --topic-arn "$arn" --message "$message"  --subject "Openprocurement Billing" 
-}
-
 
 move_to () {
     file="${1%.*}"
@@ -105,5 +92,5 @@ find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).\(cont
 echo
 
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" | while read -r file;do  put_and_sign "$file"; done
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" | xargs  {{parts.buildout.directory}}/bin/send -f 
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
