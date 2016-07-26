@@ -46,7 +46,7 @@ class AWSClient(object):
         try:
             self.session = boto3.Session()
         except ClientError as e:
-            print "Errori {}".format(e)
+            print "Error: {}".format(e)
         self.Logger = logging.getLogger('AWS')
         self.bucket = self.config.get('aws', 'bucket')
         self.expires = self.config.get('aws', 'expires')
