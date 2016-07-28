@@ -157,7 +157,12 @@ class Status(argparse.Action):
                  help=None,
                  metavar=None):
 
-        self.statuses = {'action' : '', 'statuses': set([u'active', u'complete', u'active.awarded'])}
+        self.statuses = {'action': '', 'statuses': set([u'active',
+                                                        u'complete',
+                                                        u'active.awarded',
+                                                        u'cancelled',
+                                                        u'unsuccessful'
+                                                        ])}
         super(Status, self).__init__(
             option_strings=option_strings,
             dest=dest,

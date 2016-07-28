@@ -4,8 +4,8 @@
 BROKERS="{{ brokers }}"
 WORK_DIR="{{parts.buildout.directory}}/var/reports"
 BIN_DIR="{{parts.buildout.directory}}/bin"
-BUCKET="{{ bucket }}"
-ARNS=( {{arns}} )
+
+eval $(pass {{aws_path}} | tail -n+2)
 
 
 find_broker_arn () {
@@ -67,18 +67,6 @@ for broker in $BROKERS;do
         "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END"
     done
 
-    find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv" | while read -r file; do  move_to "$file" "contracts"; done
-
-    for status in cancelled unsuccessful; do
-
-        for cmd in tenders refunds; do 
-            "$BIN_DIR/$cmd" -b "$broker" -p "$START" "$END" --status one="$status"
-        done
-
-        find $WORK_DIR  -maxdepth 1 -regex "$FILE_PATTERN-\(tenders\|refunds\).csv" | while read -r file; do  move_to "$file" "$status"; done
-
-    done
-
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
@@ -88,9 +76,9 @@ done
 echo
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).\(contracts\|cancelled\|unsuccessful\).csv" | xargs "${BIN_DIR}/zip" -z "ALL@$START--$END-tender-refunds.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "ALL@$START--$END-tender-refunds.zip" -f
 echo
 
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" | xargs  {{parts.buildout.directory}}/bin/send -f 
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  {{parts.buildout.directory}}/bin/send -f "{}"  \;
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
