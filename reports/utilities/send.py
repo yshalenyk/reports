@@ -3,6 +3,7 @@ import argparse
 import os.path
 import logging
 import os
+import re
 from jinja2 import Environment, PackageLoader
 from gevent.pool import Pool
 from botocore.exceptions import ClientError
@@ -53,7 +54,7 @@ class AWSClient(object):
                        for item in config.items('emails')}
         self.s3 = session.client('s3')
         self.ses = session.client('ses')
-        self.links = {}
+        self.links = []
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
 
@@ -62,19 +63,21 @@ class AWSClient(object):
         return template.render(context)
 
     def send_file(self, file):
-        broker = file.split('@')[0]
+        entry['broker'] = file.split('@')[0]
         key = os.path.basename(file)
+        entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file))
         try:
             self.s3.upload_file(
                     file,
                     self.bucket,
                     key)
-            self.links[broker] = self.s3.generate_presigned_url(
+            entry['link'] = self.s3.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': self.bucket, 'Key': key},
                 ExpiresIn=self.expires,
             )
-            print "Url for {} ==> {}\n".format(broker, self.links[broker])
+            print "Url for {} ==> {}\n".format(entr['broker'], entry['link'])
+            self.links.append(entry)
         except ClientError as e:
             print "Error during uploading file {}. Error {}".format(file, e)
 
@@ -84,7 +87,7 @@ class AWSClient(object):
                 Source=self.emails['from'],
                 Destination={
                     'ToAdresses': [
-                        self.emails[context['broker']],
+                        self.emails[context[broker]],
                     ]
                 },
                 Message={
@@ -102,6 +105,8 @@ class AWSClient(object):
                 }
             )
             print "Successfully sent message to {}".format(context['broker'])
+        except KeyError as e:
+            print "No email for broker {}".format(context['broker'])
         except ClientError as e:
             print "Fail during sening message. Error: {}".format(e)
 
