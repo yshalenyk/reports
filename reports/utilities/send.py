@@ -63,9 +63,10 @@ class AWSClient(object):
         return template.render(context)
 
     def send_file(self, file):
-        entry['broker'] = file.split('@')[0]
+        entry = {}
         key = os.path.basename(file)
-        entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file))
+        entry['broker'] = key.split('@')[0]
+        entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
         try:
             self.s3.upload_file(
                     file,
@@ -76,7 +77,7 @@ class AWSClient(object):
                 Params={'Bucket': self.bucket, 'Key': key},
                 ExpiresIn=self.expires,
             )
-            print "Url for {} ==> {}\n".format(entr['broker'], entry['link'])
+            print "Url for {} ==> {}\n".format(entry['broker'], entry['link'])
             self.links.append(entry)
         except ClientError as e:
             print "Error during uploading file {}. Error {}".format(file, e)
@@ -84,10 +85,10 @@ class AWSClient(object):
     def send_email(self, context):
         try:
             self.ses.send_email(
-                Source=self.emails['from'],
+                Source=self.emails['from'][0],
                 Destination={
-                    'ToAdresses': [
-                        self.emails[context[broker]],
+                    'ToAddresses': [
+                        ','.join(self.emails[context['broker']]),
                     ]
                 },
                 Message={
