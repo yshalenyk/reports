@@ -5,18 +5,6 @@ BROKERS="{{ brokers }}"
 WORK_DIR="{{parts.buildout.directory}}/var/reports"
 BIN_DIR="{{parts.buildout.directory}}/bin"
 
-eval $(pass {{aws_path}} | tail -n+2)
-
-
-find_broker_arn () {
-
-    for arn in "${ARNS[@]}"; do
-        if [ "${arn%%=*}" == "$1" ]; then
-            echo "${arn##*=}"
-        fi
-    done
-}
-
 
 parse_date () {
 
@@ -83,5 +71,5 @@ find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" |
 echo
 
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  {{parts.buildout.directory}}/bin/send -f "{}"  \;
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  {{parts.buildout.directory}}/bin/send -n -f "{}"  \;
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
