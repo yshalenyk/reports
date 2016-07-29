@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import smtplib
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE
@@ -56,11 +57,7 @@ class AWSClient(object):
         self.smtp_server = self.config.get('email', 'smtp_server')
         self.smtp_port = self.config.get('email', 'smtp_port')
         self.verified_email = self.config.get('email', 'verified_email')
-        self.emails_to = dict(
-            (broker.strip(), email.strip().split(','))
-            for item in [e for e in self.config.get('email', 'emails').split('\n') if e]
-            for (broker, email) in [ item.split(':') ]
-        )
+        self.emails_to = dict((key, field.split(',')) for key, field in self.config.items('brokers_emails'))
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
         self.links = []
@@ -70,15 +67,16 @@ class AWSClient(object):
         cred = dict(item.split('=') for item in
                     subprocess.check_output(cmd, shell=True).split('\n')
                     if item)
-        os.environ.update(cred)
+        return cred
 
     def _render_email(self, context):
         template = self.template_env.get_template('email.html')
         return template.render(context)
 
     def send_files(self, files):
-        self._update_credentials(self.s3_cred_path)
-        s3 = boto3.client('s3')
+        cred = self._update_credentials(self.s3_cred_path)
+       
+        s3 = boto3.client('s3', aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'), region_name=cred.get('AWS_DEFAULT_REGION'))
         for f in files:
             entry = {}
             key = os.path.basename(f)
@@ -100,26 +98,25 @@ class AWSClient(object):
                 print "Error during uploading file {}. Error {}".format(f, e)
 
     def send_emails(self):
-        self._update_credentials(self.ses_cred_path)
-        user = os.environ.get('AWS_ACCESS_KEY_ID')
-        password = os.environ.get('AWS_SECRED_KEY')
-
+        cred = self._update_credentials(self.ses_cred_path)
+        user = cred.get('AWS_ACCESS_KEY_ID')
+        password = cred.get('AWS_SECRET_ACCESS_KEY')
         smtpserver = smtplib.SMTP(self.smtp_server, self.smtp_port)
 
         smtpserver.ehlo()
         smtpserver.starttls()
         smtpserver.ehlo()
-
         smtpserver.login(user, password)
+
         try:
             for context in self.links:
-                recipients = self.emails_to(context['broker']) 
-                msg = MIMEMultipart('alternative')
+                recipients = self.emails_to[context['broker']]
+                msg = MIMEText(self._render_email(context), 'html', 'utf-8')
                 msg['Subject'] = 'Openprocurement Billing'
                 msg['From'] = self.verified_email
                 msg['To'] = COMMASPACE.join(recipients)
-                msg.attach(MIMEText(self._render_email(context), 'html'))
-                smtpserver.sendmail(self.verified_email, recipients, msg.as_string())
+
+                smtpserver.sendmail(self.verified_email, recipients,  msg.as_string())
         finally:
             smtpserver.close()
 
@@ -130,8 +127,8 @@ def run():
 
     client = AWSClient(args.config)
     client.send_files(args.files)
-    for key, link in client.links.iteritems():
-        print "Url for {} ==> {}\n".format(key, link)
+    for broker in client.links:
+        print "Url for {} ==> {}\n".format(broker['broker'], broker['link'])
     if args.notify:
         client.send_emails()
 
