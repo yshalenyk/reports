@@ -10,7 +10,8 @@ install_requires = [
     'iso8601',
     'pyminizip',
     'arrow',
-    'boto3'
+    'boto3',
+    'Jinja2'
 ]
 
 test_requires = install_requires + [
