@@ -165,7 +165,7 @@ function(doc) {
         },
         tender: function(owner, date, bid, tender, audits){
             emit([owner, date, bid.id], {
-                tender: tender.id,
+                tender: id,
                 value: tender.value.amount,
                 currency: tender.value.currency,
                 bid: bid.id,
