@@ -114,7 +114,7 @@ function(doc) {
                     } else {
                         date = max_date( lot_cancellations[0] );
                     }
-                    if ( !( date < this.tender_handler.bids_disclosure_standstill ) ) {
+                    if ( !( date < (new Date(this.tender_handler.bids_disclosure_standstill)) ) ) {
                         this.lot_date = date;
                     }
                 }
