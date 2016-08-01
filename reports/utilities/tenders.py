@@ -11,6 +11,7 @@ class TendersUtility(BaseTendersUtility):
         self.headers = ["tender", "tenderID", "lot",
                         "status", "lot_status", "currency",
                         "kind", "value", "rate", "bill"]
+        [self.headers.remove(col) for col in self.skip_cols if col in self.headers]
 
     def row(self, record):
         rate = None

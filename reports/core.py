@@ -223,6 +223,13 @@ class BaseTendersUtility(BaseUtility):
             help='File with ids that should be skipped'
         )
 
+        parser.add_argument(
+            '--skip-columns',
+            dest='columns',
+            nargs='+',
+            default=[],
+            help='Columns to skip')
+ 
         args = parser.parse_args()
         self.ignore = set()
         self._initialize(
@@ -234,6 +241,7 @@ class BaseTendersUtility(BaseUtility):
         self.kinds = args.kind
         self.statuses = args.status['statuses']
         self.status_action = args.status['action']
+        self.skip_cols = args.columns
         if args.ignore:
             [
                 [self.tenders_to_ignore.append(line.strip('\n').split(',')[0]),
