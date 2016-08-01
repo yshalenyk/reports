@@ -8,7 +8,8 @@ class TendersUtility(BaseTendersUtility):
 
     def __init__(self):
         super(TendersUtility, self).__init__('tenders')
-        self.headers = ["tender", "tenderID", "lot", "currency",
+        self.headers = ["tender", "tenderID", "lot",
+                        "status", "lot_status", "currency",
                         "kind", "value", "rate", "bill"]
 
     def row(self, record):
