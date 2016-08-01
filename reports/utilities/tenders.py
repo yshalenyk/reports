@@ -8,8 +8,10 @@ class TendersUtility(BaseTendersUtility):
 
     def __init__(self):
         super(TendersUtility, self).__init__('tenders')
-        self.headers = ["tender", "tenderID", "lot", "currency",
+        self.headers = ["tender", "tenderID", "lot",
+                        "status", "lot_status", "currency",
                         "kind", "value", "rate", "bill"]
+        [self.headers.remove(col) for col in self.skip_cols if col in self.headers]
 
     def row(self, record):
         rate = None
