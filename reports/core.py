@@ -197,8 +197,8 @@ class BaseTendersUtility(BaseUtility):
     def __init__(self, operation):
         super(BaseTendersUtility, self).__init__(operation, rev=True)
         self.view = 'report/tenders_owner_date'
-        self.tenders_to_ignore = []
-        self.lots_to_ignore = []
+        self.tenders_to_ignore = set()
+        self.lots_to_ignore = set()
         parser = get_cmd_parser()
         parser.add_argument(
             '--kind',
@@ -229,7 +229,7 @@ class BaseTendersUtility(BaseUtility):
             nargs='+',
             default=[],
             help='Columns to skip')
- 
+
         args = parser.parse_args()
         self.ignore = set()
         self._initialize(
@@ -244,8 +244,8 @@ class BaseTendersUtility(BaseUtility):
         self.skip_cols = args.columns
         if args.ignore:
             [
-                [self.tenders_to_ignore.append(line.strip('\n').split(',')[0]),
-                    self.lots_to_ignore.append(line.strip('\n').split(',')[1])]
+                (self.tenders_to_ignore.add(line.strip('\n').split(',')[0]),
+                 self.lots_to_ignore.add(line.strip('\n').split(',')[1]))
                 for line in args.ignore.readlines()
             ]
 
