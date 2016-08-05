@@ -259,14 +259,25 @@ function(doc) {
         }
     };
 
-    var check_lot = function(lot, bids, procurementMethod) {
+    var check_lot = function(lot, tender) {
 
-        if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(procurementMethod) !== -1) {
-            if (count_lot_bids(lot, bids) > 1) {
+        if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(tender.procurementMethod) !== -1) {
+            if (count_lot_bids(lot, tender.bids) > 1) {
                 return true; 
             }
+        } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
+            var lot_awards = ('awards' in tender) ? (
+                tender.awards.filter(function(a) {
+                    return a.lotID === lot.id;
+                })
+            ) : [];
+            if ( ( (count_lot_bids(lot, tender.bids) < 2 ) && (lot_awards.length === 0))) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
-            if (count_lot_bids(lot, bids) > 0) {
+            if (count_lot_bids(lot, tender.bids) > 0) {
                 return true; 
             }
         }
@@ -276,6 +287,13 @@ function(doc) {
     var check_tender = function(tender) {
         if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(tender.procurementMethodType) !== -1) {
             if (tender.numberOfBids > 1) {
+                return true;
+            }
+        }  else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
+            if( (tender.numberOfBids < 2) && !('awards' in tender)) {
+                log('skip tender '+tender.id + " bids: "+ tender.numberOfBids);
+                return false;
+            } else {
                 return true;
             }
         } else {
@@ -291,7 +309,7 @@ function(doc) {
         var handler = new Handler(tender);
         if (handler.is_multilot) {
             tender.lots.forEach(function(lot){
-                if ( check_lot(lot, tender.bids, tender.procurementMethodType) ) {
+                if ( check_lot(lot, tender) ) {
                     var lot_handler = new lotHandler(lot, tender);
                     if (lot_handler.lot_date !== null) {
                         emitter.lot(lot, lot_handler.lot_date);
