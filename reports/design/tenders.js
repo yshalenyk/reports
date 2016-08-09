@@ -167,7 +167,7 @@ function(doc) {
                 if (this.tender_handler.status === 'cancelled') {
                     this.lot_date = (this.tender_handler.tender_date !== null) ? this.tender_handler.tender_date : null;
                 } else {
-                    this.tender_date = null;
+                    this.lot_date = null;
                 }
             }
         } else { 
