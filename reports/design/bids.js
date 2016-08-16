@@ -76,24 +76,31 @@ function(doc) {
     var check_tener = function(tender) {
         switch(tender.status) {
             case "cancelled":
-                var tender_cancellations = ( tender.cancellations || [] ).filter(function(cancellation) {
-                    return ( cancellation.status === 'active' ) && (cancellation.cancellationOf === 'tender');
-                });
-                if (tender_cancellations.length === 0) {
-                    return false;
-                }
-                if (tender_cancellations.length > 1) {
-                    cancel = tender_cancellations.reduce(function(prev_doc, curr_doc) {
-                        return (max_date( prev_doc ) > max_date( curr_doc ))? curr_doc : prev_doc;
-                    });
-
-                    if (max_date( cancel ) < (new Date( bids_disclojure_date ))) {
+                if ('date' in tender) {
+                    if ((new Date( tender.date ) ) < ( new Date(bids_disclojure_date) )) {
                         return false;
                     }
                 } else {
-                    if (max_date( tender_cancellations[0] ) < (new Date( bids_disclojure_date ))) {
+                    var tender_cancellations = ( tender.cancellations || [] ).filter(function(cancellation) {
+                        return ( cancellation.status === 'active' ) && (cancellation.cancellationOf === 'tender');
+                    });
+                    if (tender_cancellations.length === 0) {
                         return false;
                     }
+                    if (tender_cancellations.length > 1) {
+                        cancel = tender_cancellations.reduce(function(prev_doc, curr_doc) {
+                            return (max_date( prev_doc ) > max_date( curr_doc ))? curr_doc : prev_doc;
+                        });
+
+                        if (max_date( cancel ) < (new Date( bids_disclojure_date ))) {
+                            return false;
+                        }
+                    } else {
+                        if (max_date( tender_cancellations[0] ) < (new Date( bids_disclojure_date ))) {
+                            return false;
+                        }
+                    }
+
                 }
                 return true;
             case "unsuccessful":
@@ -115,27 +122,35 @@ function(doc) {
     var check_lot = function(tender, lot){
         switch (lot.status) {
             case "cancelled":
-                lot_cancellation = ( tender.cancellations || []).filter(function(cancellation) {
-                    if (( cancellation.status === 'active' ) && ( cancellation.cancellationOf === 'lot' ) && ( cancellation.relatedLot === lot.id )) {
-                        return true;
-                    }
-                });
-                if (lot_cancellation.length > 0) {
-                    if (lot_cancellation.length > 1) {
-                        cancel = lot_cancellation.reduce(function(prev_doc, curr_doc) {
-                            return (max_date( prev_doc ) > max_date( curr_doc ))? curr_doc : prev_doc;
-                        });
-
-                        if (max_date( cancel ) < (new Date( bids_disclojure_date ))) {
-                            return false;
-                        }
-                    } else {
-                        if (max_date( lot_cancellation[0] ) < (new Date( bids_disclojure_date ))) {
-                            return false;
-                        }
+                if ('date' in lot) {
+                    if ((new Date(lot.date)) < (new Date(bids_disclojure_date))) {
+                        return false;
                     }
 
+                } else {
+                    lot_cancellation = ( tender.cancellations || []).filter(function(cancellation) {
+                        if (( cancellation.status === 'active' ) && ( cancellation.cancellationOf === 'lot' ) && ( cancellation.relatedLot === lot.id )) {
+                            return true;
+                        }
+                    });
+                    if (lot_cancellation.length > 0) {
+                        if (lot_cancellation.length > 1) {
+                            cancel = lot_cancellation.reduce(function(prev_doc, curr_doc) {
+                                return (max_date( prev_doc ) > max_date( curr_doc ))? curr_doc : prev_doc;
+                            });
+
+                            if (max_date( cancel ) < (new Date( bids_disclojure_date ))) {
+                                return false;
+                            }
+                        } else {
+                            if (max_date( lot_cancellation[0] ) < (new Date( bids_disclojure_date ))) {
+                                return false;
+                            }
+                        }
+
+                    }
                 }
+
                 return true;
             case "unsuccessful":
                 if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(tender.procurementMethodType) !== -1) {
