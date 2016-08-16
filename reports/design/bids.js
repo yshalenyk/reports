@@ -63,6 +63,19 @@ function(doc) {
         });
     };
 
+
+    
+    var get_eu_tender_bids = function(tender) {
+        var qualified_bids = ( tender.qualifications || [] ).map(function(qualification) {
+            return qualification.bidID;
+        });
+        return (tender.bids || []).filter(function(bid) {
+            return (qualified_bids.indexOf(bid.id) !== -1);
+        });
+    };
+
+
+
     var count_lot_bids = function(lot, bids) {
         return bids.map(function(bid) {
             return ( bid.lotValues || [] ).filter(function(value) {
@@ -72,6 +85,15 @@ function(doc) {
             return total + curr;
         }, 0);
     };
+
+    var count_lot_qualifications = function(qualifications, lot_id) {
+        if ( (typeof qualifications === 'undefined') || (qualifications.length === 0) ) {
+            return 0;
+        }
+        return qualifications.filter(function(qualification) {
+            return qualification.lotID === lot_id;
+        }).length;
+    }
 
     var check_tener = function(tender) {
         switch(tender.status) {
@@ -104,7 +126,13 @@ function(doc) {
                 }
                 return true;
             case "unsuccessful":
-                if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(tender.procurementMethodType) !== -1) {
+                if (tender.procurementMethodType === 'aboveThresholdEU') {
+
+                    if (( tender.qualifications || [] ).length < 2) {
+                        return false;
+                    }
+
+                } else if (tender.procurementMethodType === 'aboveThresholdUA') {
                     if (tender.numberOfBids < 2) {
                         return false;
                     }
@@ -153,10 +181,15 @@ function(doc) {
 
                 return true;
             case "unsuccessful":
-                if (['aboveThresholdUA', 'aboveThresholdEU'].indexOf(tender.procurementMethodType) !== -1) {
+                if (tender.procurementMethodType === 'aboveThresholdUA') {
                     if (count_lot_bids(lot, tender.bids) < 2) {
                         return false;
                     }
+                } else if (tender.qualifications === 'aboveThresholdEU') {
+                    if (count_lot_qualifications(tender.qualifications, lot.id) < 2) {
+                        return false;
+                    }
+
                 } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
                     var lot_awards = ('awards' in tender) ? (
                         tender.awards.filter(function(a) {
@@ -204,7 +237,7 @@ function(doc) {
     var emit_results = function(tender) {
 
         if ("bids" in tender) {
-            var bids = filter_bids(tender.bids);
+            var bids = (tender.procurementMethodType === 'aboveThresholdEU') ? get_eu_tender_bids(tender) : filter_bids(tender.bids);
             if(is_multilot) {
                 ( bids || [] ).forEach(function(bid) {
                     bid.lotValues.forEach(function(value) {
