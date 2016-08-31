@@ -64,7 +64,6 @@ passwd=$(pass "{{zip_path}}/all")
 find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(bids\|invoices\).csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids-invoices.csv"
 "${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids-invoices.zip" -f "all@$START_$END-bids-invoices.csv"
 rm "all@$START_$END-bids-invoices.csv"
-exit
 echo
 
 
