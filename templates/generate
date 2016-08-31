@@ -73,5 +73,5 @@ find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" |
 echo
 
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  {{parts.buildout.directory}}/bin/send -n -f "{}"  \;
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;

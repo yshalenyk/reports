@@ -57,6 +57,7 @@ class AWSClient(object):
         self.smtp_server = self.config.get('email', 'smtp_server')
         self.smtp_port = self.config.get('email', 'smtp_port')
         self.verified_email = self.config.get('email', 'verified_email')
+        self.subject = self.config.get('email', 'subject')
         self.emails_to = dict((key, field.split(',')) for key, field in self.config.items('brokers_emails'))
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
@@ -112,7 +113,7 @@ class AWSClient(object):
             for context in self.links:
                 recipients = self.emails_to[context['broker']]
                 msg = MIMEText(self._render_email(context), 'html', 'utf-8')
-                msg['Subject'] = 'Openprocurement Billing'
+                msg['Subject'] = str(self.subject)
                 msg['From'] = self.verified_email
                 msg['To'] = COMMASPACE.join(recipients)
 
