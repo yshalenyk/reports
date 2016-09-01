@@ -63,7 +63,7 @@ echo "Creating zip archive with invoices"
 passwd=$(pass "{{zip_path}}/all")
 find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-bids.csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids.csv"
 "${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START_$END-bids.csv"
-rm "all@$START_$END-bids-invoices.csv"
+rm "all@$START_$END-bids.csv"
 echo
 
 
