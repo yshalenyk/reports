@@ -76,14 +76,32 @@ class AWSClient(object):
 
     def send_files(self, files):
         cred = self._update_credentials(self.s3_cred_path)
-       
-        s3 = boto3.client('s3', aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'), region_name=cred.get('AWS_DEFAULT_REGION'))
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=cred.get('AWS_DEFAULT_REGION')
+        )
+
         for f in files:
             entry = {}
             key = os.path.basename(f)
             broker = key.split('@')[0]
             entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
             entry['broker'] = broker
+            entry['encrypted'] = False
+            if 'bids' or 'invoices' in key:
+                entry['encrypted'] = True
+            if re.search('r\-bids\-invoices\.', key):
+                entry['type'] = 'bids and invoices'
+            if re.search('r\-tenders\-refunds\.', key):
+                entry['type'] = 'tenders and refunds'
+            if re.search('r\-tenders\.', key):
+                entry['type'] = 'tenders'
+            if re.search('r\-bids\.', key):
+                entry['type'] = 'bids'
+
             try:
                 s3.upload_file(
                     f,

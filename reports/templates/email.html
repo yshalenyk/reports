@@ -61,7 +61,12 @@
             </div>
             <div class="content" style="text-align: left;margin: 20px auto;padding: 10px;">
                 <h4 style="margin: 0 auto;">Prozorro billing reports.</h4>
-                <p>Reports that were genrated for <strong>{{broker}}</strong> ({{period}}). Click on the "Download" button to save this file. Zip archive is encryped by password you've received earlier. Please use this password to decrypt the file.</p>
+                <p>Reports that were genrated for <strong>{{broker}}. </strong> File contains all {{ type }} for ({{period}}). Click on the "Download" button to save this file. </p>
+                {% if encryped %}
+                    <p>
+                    Zip archive is encryped by password you've received earlier. Please use this password to decrypt the file.
+                    </p>
+                {% endif %}
                 <p>Download link for this file will expire in two weeks.</p>
             </div>
             <div class="bottom" style="margin: 10px 30px;">
