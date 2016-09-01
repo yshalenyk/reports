@@ -61,15 +61,15 @@ echo
 
 echo "Creating zip archive with invoices"
 passwd=$(pass "{{zip_path}}/all")
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(bids\|invoices\).csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids-invoices.csv"
-"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids-invoices.zip" -f "all@$START_$END-bids-invoices.csv"
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-bids.csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids.csv"
+"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START_$END-bids.csv"
 rm "all@$START_$END-bids-invoices.csv"
 echo
 
 
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tender-refunds.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-tenders.csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
 echo
 
 echo "Sending to s3"
