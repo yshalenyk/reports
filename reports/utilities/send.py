@@ -93,13 +93,13 @@ class AWSClient(object):
             entry['encrypted'] = False
             if 'bids' or 'invoices' in key:
                 entry['encrypted'] = True
-            if re.search('r\-bids\-invoices\.', key):
-                entry['type'] = 'bids and invoices'
-            if re.search('r\-tenders\-refunds\.', key):
+            if re.search('\-invoices\-refunds\.', key):
+                entry['type'] = 'invoices and refunds'
+            if re.search('\-tenders\-refunds\.', key):
                 entry['type'] = 'tenders and refunds'
-            if re.search('r\-tenders\.', key):
+            if re.search('\-tenders\.', key):
                 entry['type'] = 'tenders'
-            if re.search('r\-bids\.', key):
+            if re.search('\-bids\.', key):
                 entry['type'] = 'bids'
 
             try:

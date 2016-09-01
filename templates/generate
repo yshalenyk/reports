@@ -54,7 +54,7 @@ for broker in $BROKERS;do
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
-    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\|refunds\|tenders\).csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-bids-invoices.zip" -f 
+    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\|refunds\|tenders\).csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-invoices-refunds.zip" -f 
     echo
 done
 echo
