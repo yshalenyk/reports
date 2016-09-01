@@ -90,18 +90,18 @@ class AWSClient(object):
             broker = key.split('@')[0]
             entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
             entry['broker'] = broker
-            entry['encrypted'] = False
-            if 'bids' or 'invoices' in key:
-                entry['encrypted'] = True
             if re.search('\-invoices\-refunds\.', key):
                 entry['type'] = 'invoices and refunds'
+                entry['encrypted'] = True
             if re.search('\-tenders\-refunds\.', key):
                 entry['type'] = 'tenders and refunds'
+                entry['encrypted'] = False
             if re.search('\-tenders\.', key):
                 entry['type'] = 'tenders'
+                entry['encrypted'] = False
             if re.search('\-bids\.', key):
                 entry['type'] = 'bids'
-
+                entry['encrypted'] = True
             try:
                 s3.upload_file(
                     f,
