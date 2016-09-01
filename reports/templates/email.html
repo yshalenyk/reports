@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Openrpocurement Billing</title>
+        <title>Prozorro Billing</title>
         <meta name="viewport" content="width=device-width">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <style type="text/css">
@@ -57,17 +57,24 @@
     <body style="font-family: &quot;Helvetica Neue&quot;, &quot;Helvetica&quot;, Helvetica, Arial, sans-serif;background: #f6f6f6;">
         <div class="container" style="width: 548px;margin: 15px auto;padding: 25px;background: #FFF;display: block;vertical-align: top;border: 1px solid #000;border-color: transparent;">        
             <div class="header" style="font-size: 16px;margin: 20px;text-align: center;">
-                <h1>Openrpocurement Billing</h1>
+                <h1>Prozorro Billing</h1>
             </div>
             <div class="content" style="text-align: left;margin: 20px auto;padding: 10px;">
-                <p>Openrpocurement billing reports.</p>
-                <p>Reports genrated for <strong>{{broker}}</strong>({{period}}). Click Dowload button to save file. Zip archive is encryped by password you've got elier. Please use this password to decrypt file.</p>
-                <p></p>
+                <h4 style="margin: 0 auto;">Prozorro billing reports.</h4>
+                <p>Reports that were genrated for <strong>{{broker}}. </strong> File contains all {{ type }} for ({{period}}). Click on the "Download" button to save this file. </p>
+                {% if encrypted %}
+                    <p>
+                    Zip archive is encryped by password you've received earlier. Please use this password to decrypt the file.
+                    </p>
+                {% endif %}
+                <p>Download link for this file will expire in two weeks.</p>
             </div>
             <div class="bottom" style="margin: 10px 30px;">
+                <a href="{{link}}" style="text-decoration: none;color: #fff;">
                 <div class="button" style="color: #fff;text-decoration: none;max-width: 220px;height: 36px;line-height: 36px;margin: 5px auto;background-color: #333;border-radius: 5px;padding: 5px;text-align: center;cursor: pointer;">
-                    <a href="{{link}}" style="text-decoration: none;color: #fff;">Download</a>
+                    Download
                 </div>
+                </a>
             </div>
         </div>    
     </body>

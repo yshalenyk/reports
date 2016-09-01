@@ -57,6 +57,7 @@ class AWSClient(object):
         self.smtp_server = self.config.get('email', 'smtp_server')
         self.smtp_port = self.config.get('email', 'smtp_port')
         self.verified_email = self.config.get('email', 'verified_email')
+        self.subject = self.config.get('email', 'subject')
         self.emails_to = dict((key, field.split(',')) for key, field in self.config.items('brokers_emails'))
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
@@ -75,14 +76,32 @@ class AWSClient(object):
 
     def send_files(self, files):
         cred = self._update_credentials(self.s3_cred_path)
-       
-        s3 = boto3.client('s3', aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'), region_name=cred.get('AWS_DEFAULT_REGION'))
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=cred.get('AWS_DEFAULT_REGION')
+        )
+
         for f in files:
             entry = {}
             key = os.path.basename(f)
             broker = key.split('@')[0]
             entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
             entry['broker'] = broker
+            if re.search('\-invoices\-refunds\.', key):
+                entry['type'] = 'invoices and refunds'
+                entry['encrypted'] = True
+            if re.search('\-tenders\-refunds\.', key):
+                entry['type'] = 'tenders and refunds'
+                entry['encrypted'] = False
+            if re.search('\-tenders\.', key):
+                entry['type'] = 'tenders'
+                entry['encrypted'] = False
+            if re.search('\-bids\.', key):
+                entry['type'] = 'bids'
+                entry['encrypted'] = True
             try:
                 s3.upload_file(
                     f,
@@ -112,7 +131,7 @@ class AWSClient(object):
             for context in self.links:
                 recipients = self.emails_to[context['broker']]
                 msg = MIMEText(self._render_email(context), 'html', 'utf-8')
-                msg['Subject'] = 'Openprocurement Billing'
+                msg['Subject'] = str(self.subject)
                 msg['From'] = self.verified_email
                 msg['To'] = COMMASPACE.join(recipients)
 

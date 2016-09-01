@@ -54,25 +54,24 @@ for broker in $BROKERS;do
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
-    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\|refunds\|tenders\).csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-bids-invoices.zip" -f 
+    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\|refunds\|tenders\).csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-invoices-refunds.zip" -f 
     echo
 done
 echo
 
 echo "Creating zip archive with invoices"
 passwd=$(pass "{{zip_path}}/all")
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(bids\|invoices\).csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids-invoices.csv"
-"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids-invoices.zip" -f "all@$START_$END-bids-invoices.csv"
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-bids.csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids.csv"
+"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START_$END-bids.csv"
 rm "all@$START_$END-bids-invoices.csv"
-exit
 echo
 
 
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tender-refunds.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-tenders.csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
 echo
 
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  {{parts.buildout.directory}}/bin/send -n -f "{}"  \;
+find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
