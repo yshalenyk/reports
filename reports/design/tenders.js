@@ -304,7 +304,7 @@ function(doc) {
                 return true;
             }
         } else if (tender.procurementMethodType === 'aboveThresholdEU') {
-            if (tender.qualifications.length > 1) { 
+            if ( ( tender.qualifications.length || []) > 1) { 
                 return true;
             }
 
