@@ -30,6 +30,16 @@ function(doc) {
     };
 
 
+    var count_lot_qualifications = function(qualifications, lot_id) {
+        if ( (typeof qualifications === 'undefined') || (qualifications.length === 0) ) {
+            return 0;
+        }
+        return qualifications.filter(function(qualification) {
+            return qualification.lotID === lot_id;
+        }).length;
+    }
+
+
 
     var max_date = function (obj) { 
         //helper function to find max date in object 
@@ -121,7 +131,6 @@ function(doc) {
             } else {
                 this.tender_date = null;
             }
-            
         } else {
             switch (this.status) {
             case 'complete':
@@ -261,10 +270,15 @@ function(doc) {
 
     var check_lot = function(lot, tender) {
 
-        if ( ( tender.procurementMethodType === 'aboveThresholdUA' ) || (tender.procurementMethodType === 'aboveThresholdEU')) {
+        if ( tender.procurementMethodType === 'aboveThresholdUA' ) {
             if (count_lot_bids(lot, tender.bids) > 1) {
                 return true; 
             }
+        } else if (tender.procurementMethodType === 'aboveThresholdEU') {
+            if (count_lot_qualifications(tender.qualifications, lot.id) > 1) {
+                return true; 
+            }
+
         } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
             var lot_awards = ('awards' in tender) ? (
                 tender.awards.filter(function(a) {
@@ -285,11 +299,16 @@ function(doc) {
     };
 
     var check_tender = function(tender) {
-        if ( ( tender.procurementMethodType === 'aboveThresholdUA' ) || (tender.procurementMethodType === 'aboveThresholdEU')) {
+        if ( tender.procurementMethodType === 'aboveThresholdUA' ) {
             if (tender.numberOfBids > 1) {
                 return true;
             }
-        }  else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
+        } else if (tender.procurementMethodType === 'aboveThresholdEU') {
+            if (tender.qualifications.length > 1) { 
+                return true;
+            }
+
+        } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
             if( (tender.numberOfBids < 2) && !('awards' in tender)) {
                 log('skip tender '+tender.id + " bids: "+ tender.numberOfBids);
                 return false;
@@ -328,7 +347,6 @@ function(doc) {
                 }
             }
         }
-        
     };
 
     find_tender_data(doc);
