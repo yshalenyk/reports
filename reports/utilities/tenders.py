@@ -20,7 +20,7 @@ class TendersUtility(BaseTendersUtility):
         status = record.get('status', '')
         lot_status = record.get('lot_status', '')
         if lot:
-            if tender in self.tenders_to_ignore and lot in self.lots_to_ignore:
+            if ','.join([tender, lot]) in self.ignore:
                 self.Logger.info(
                     'Skip tender {} with lot {} by'
                     ' ignore list'.format(tender, lot))
@@ -30,6 +30,7 @@ class TendersUtility(BaseTendersUtility):
                 self.Logger.info(
                     'Skip tender {} by ignore list'.format(tender)
                 )
+                print "Skip"
                 return
         if record.get('kind') not in self.kinds:
             self.Logger.info('Skip tender {} by kind'.format(tender))
