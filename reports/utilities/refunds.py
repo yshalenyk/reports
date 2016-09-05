@@ -19,11 +19,10 @@ class RefundsUtility(BaseTendersUtility):
         lot_status = record.get('lot_status', '')
 
         if lot:
-            if tender in self.tenders_to_ignore and lot in self.lots_to_ignore:
+            if ','.join([tender, lot]) in self.ignore:
                 self.Logger.info(
                     'Skip tender {} with lot {} by'
-                    ' ignore list'.format(tender, lot)
-                )
+                    ' ignore list'.format(tender, lot))
                 return
         else:
             if tender in self.tenders_to_ignore:

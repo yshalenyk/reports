@@ -243,11 +243,7 @@ class BaseTendersUtility(BaseUtility):
         self.status_action = args.status['action']
         self.skip_cols = args.columns
         if args.ignore:
-            [
-                (self.tenders_to_ignore.add(line.strip('\n').split(',')[0]),
-                 self.lots_to_ignore.add(line.strip('\n').split(',')[1]))
-                for line in args.ignore.readlines()
-            ]
+            self.ignore = [line.strip('\n') for line in args.ignore.readlines()]
 
     def check_status(self, tender_status, lot_status):
         if lot_status:
