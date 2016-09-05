@@ -25,7 +25,7 @@ class RefundsUtility(BaseTendersUtility):
                     ' ignore list'.format(tender, lot))
                 return
         else:
-            if tender in self.tenders_to_ignore:
+            if '{},'.format(tender) in self.ignore:
                 self.Logger.info(
                     'Skip tender {} by ignore list'.format(tender)
                 )
