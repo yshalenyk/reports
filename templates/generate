@@ -1,9 +1,13 @@
 #!/usr/bin/bash
 
 
-BROKERS="{{ brokers }}"
+INIT_BROKERS="{{ brokers }}"
+WORK_BROKERS=$INIT_BROKERS
+ITERATE_BROKERS="$INIT_BROKERS all"
 WORK_DIR="{{parts.buildout.directory}}/var/reports"
 BIN_DIR="{{parts.buildout.directory}}/bin"
+START="$(date -d'-1 month' +'%Y-%m')-01"
+END="$(date  +'%Y-%m')-01"
 
 
 parse_date () {
@@ -25,24 +29,27 @@ parse_date () {
 
 
 
-if [ -z "$1" ]; then
-    START="$(date -d'-1 month' +'%Y-%m')-01"
-else
-    START="$(parse_date "$1")"
-fi
+if [ !  -z "$1" ]; then
+    if [[ $INIT_BROKERS =~ .*"$1".* ]]; then
+        WORK_BROKERS=$@
+        ITERATE_BROKERS=$@
+    elif [[ "all" == "$1" ]]; then
+        WORK_BROKERS=$INIT_BROKERS
+        ITERATE_BROKERS="all"
+    else
+        START="$(parse_date "$1")"
+        if [ ! -z "$2" ]; then
+            END="$(parse_date "$2")"
+        fi
 
-if [ -z "$2" ]; then
-    END="$(date  +'%Y-%m')-01"
-else
-    END="$(parse_date "$2")"
+    fi
 fi
-
 
 
 echo "Generating reports form $START to $END"
 echo
 
-for broker in $BROKERS;do
+for broker in $WORK_BROKERS;do
 
 
     FILE_PATTERN="${WORK_DIR}/${broker}@$START--$END"
@@ -60,10 +67,13 @@ done
 echo
 
 echo "Creating zip archive with invoices"
+
 passwd=$(pass "{{zip_path}}/all")
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-bids.csv" -exec cat "{}" \; | sort -ur > "all@$START_$END-bids.csv"
-"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START_$END-bids.csv"
-rm "all@$START_$END-bids.csv"
+cat $WORK_DIR/*@$START--$END-bids.csv | sort -ur  > "all@$START--$END-bids.csv"
+
+
+"${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START--$END-bids.csv"
+rm "all@$START--$END-bids.csv"
 echo
 
 
@@ -71,7 +81,9 @@ echo
 echo "Creating zip archive with refunds"
 find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-tenders.csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
 echo
-
 echo "Sending to s3"
-find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
+for broker in $ITERATE_BROKERS; do
+    find "$WORK_DIR" -maxdepth 1 -name "$broker@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
+done
+
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;

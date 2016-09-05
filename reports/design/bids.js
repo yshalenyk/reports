@@ -185,7 +185,7 @@ function(doc) {
                     if (count_lot_bids(lot, tender.bids) < 2) {
                         return false;
                     }
-                } else if (tender.qualifications === 'aboveThresholdEU') {
+                } else if (tender.procurementMethodType === 'aboveThresholdEU') {
                     if (count_lot_qualifications(tender.qualifications, lot.id) < 2) {
                         return false;
                     }
