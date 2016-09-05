@@ -131,7 +131,7 @@ class AWSClient(object):
             for context in self.links:
                 recipients = self.emails_to[context['broker']]
                 msg = MIMEText(self._render_email(context), 'html', 'utf-8')
-                msg['Subject'] = str(self.subject)
+                msg['Subject'] = 'Prozorro Billing: all {} ({})'.format(context['type'], context['period'])
                 msg['From'] = self.verified_email
                 msg['To'] = COMMASPACE.join(recipients)
 

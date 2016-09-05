@@ -69,7 +69,8 @@ echo
 echo "Creating zip archive with invoices"
 
 passwd=$(pass "{{zip_path}}/all")
-cat $WORK_DIR/*@$START--$END-bids.csv | sort -ur  > "all@$START--$END-bids.csv"
+cat $WORK_DIR/*@$START--$END-bids.csv | head -n 1 > "all@$START--$END-bids.csv"
+cat $WORK_DIR/*@$START--$END-bids.csv | sort -u | head -n -1  >> "all@$START--$END-bids.csv"
 
 
 "${BIN_DIR}/zip" -p $passwd -z  "all@$START--$END-bids.zip" -f "all@$START--$END-bids.csv"
@@ -79,7 +80,7 @@ echo
 
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-tenders.csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
 echo
 echo "Sending to s3"
 for broker in $ITERATE_BROKERS; do
