@@ -10,6 +10,8 @@ START="$(date -d'-1 month' +'%Y-%m')-01"
 END="$(date  +'%Y-%m')-01"
 
 
+
+
 parse_date () {
 
     IFS='-' read -r year month day< <(echo "$1")
@@ -26,6 +28,13 @@ parse_date () {
 
     date -d"$year-$month-$day" +'%Y-%m-%d'
 }
+
+
+if [ -z ${BROKER_FILES+x} ]; then
+    broker_files_re="\(invoices\|bids\|refunds\|tenders\)"
+else
+    broker_files_re="\(invoices\|bids\)"
+fi
 
 
 
@@ -60,7 +69,7 @@ for broker in $WORK_BROKERS;do
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
-    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-\(invoices\|bids\|refunds\|tenders\).csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd" -z "$broker@$START--$END-invoices-refunds.zip" -f 
+    find "$WORK_DIR"  -maxdepth 1 -regex "$FILE_PATTERN-$broker_files_re.csv" | xargs -L 4 "${BIN_DIR}/zip" -p "$passwd"  -f 
     echo
 done
 echo
