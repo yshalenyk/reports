@@ -207,6 +207,7 @@ class Status(argparse.Action):
         self.statuses['statuses'] = set(sts)
 
 
-def find_operations(name):
-    rex = re.compile(r'[\-(?:invoices|refunds|tenders|bids)\-]+')
-    return re.match(rex, name).group(0).split('-')
+def get_operations(name):
+    words = re.findall(r'\w+', name)
+    return [w for w in words
+            if w in ['bids', 'invoices', 'refunds', 'tenders']]

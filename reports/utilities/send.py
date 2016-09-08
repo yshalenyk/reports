@@ -13,7 +13,7 @@ from jinja2 import Environment, PackageLoader
 from botocore.exceptions import ClientError
 from logging.config import fileConfig
 from ConfigParser import ConfigParser
-from reports.helpers import get_operations()
+from reports.helpers import get_operations
 
 Logger = None
 
@@ -93,7 +93,10 @@ class AWSClient(object):
             entry['broker'] = broker
             operations = get_operations(key)
             entry['encrypted'] = 'bids' in operations
-            entry['type'] = ' '.join(operations)
+            if len(operations) == 2:
+                entry['type'] = ' and '.join(operations)
+            else:
+                entry['type'] = ', '.join(operations)
             try:
                 s3.upload_file(
                     f,
