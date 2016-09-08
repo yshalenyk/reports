@@ -3,6 +3,7 @@ import iso8601
 import requests
 import json
 import requests_cache
+import re
 
 
 requests_cache.install_cache('exchange_cache')
@@ -204,3 +205,8 @@ class Status(argparse.Action):
     def one(self, sts):
         self.statuses['action'] = 'one'
         self.statuses['statuses'] = set(sts)
+
+
+def find_operations(name):
+    rex = re.compile(r'[\-(?:invoices|refunds|tenders|bids)\-]+')
+    return re.match(rex, name).group(0).split('-')
