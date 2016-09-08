@@ -3,6 +3,7 @@ import iso8601
 import requests
 import json
 import requests_cache
+import re
 
 
 requests_cache.install_cache('exchange_cache')
@@ -204,3 +205,9 @@ class Status(argparse.Action):
     def one(self, sts):
         self.statuses['action'] = 'one'
         self.statuses['statuses'] = set(sts)
+
+
+def get_operations(name):
+    words = re.findall(r'\w+', name)
+    return [w for w in words
+            if w in ['bids', 'invoices', 'refunds', 'tenders']]

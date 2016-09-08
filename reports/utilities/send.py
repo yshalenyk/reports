@@ -13,6 +13,7 @@ from jinja2 import Environment, PackageLoader
 from botocore.exceptions import ClientError
 from logging.config import fileConfig
 from ConfigParser import ConfigParser
+from reports.helpers import get_operations
 
 Logger = None
 
@@ -90,18 +91,12 @@ class AWSClient(object):
             broker = key.split('@')[0]
             entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
             entry['broker'] = broker
-            if re.search('\-invoices\-refunds\.', key):
-                entry['type'] = 'invoices and refunds'
-                entry['encrypted'] = True
-            if re.search('\-tenders\-refunds\.', key):
-                entry['type'] = 'tenders and refunds'
-                entry['encrypted'] = False
-            if re.search('\-tenders\.', key):
-                entry['type'] = 'tenders'
-                entry['encrypted'] = False
-            if re.search('\-bids\.', key):
-                entry['type'] = 'bids'
-                entry['encrypted'] = True
+            operations = get_operations(key)
+            entry['encrypted'] = 'bids' in operations
+            if len(operations) == 2:
+                entry['type'] = ' and '.join(operations)
+            else:
+                entry['type'] = ', '.join(operations)
             try:
                 s3.upload_file(
                     f,

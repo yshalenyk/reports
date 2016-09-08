@@ -11,7 +11,7 @@ def get_out_name(files):
         [os.path.basename(f).split('-')[-1].split('.')[0] for f in files]
     )
 
-    out_name = '{}{}-{}.zip'.format(
+    out_name = '{}@{}-{}.zip'.format(
         broker, '-'.join(date), '-'.join(operations)
     )
     return out_name
