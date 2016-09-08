@@ -30,10 +30,10 @@ parse_date () {
 }
 
 
-if [ -z ${BROKER_FILES+x} ]; then
-    broker_files_re="\(invoices\|bids\|refunds\|tenders\)"
-else
+if [[ -n $BROKER_FILES ]]; then
     broker_files_re="\(invoices\|bids\)"
+else
+    broker_files_re="\(invoices\|bids\|refunds\|tenders\)"
 fi
 
 
