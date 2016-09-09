@@ -299,7 +299,9 @@ function(doc) {
             if ( ( (count_lot_bids(lot, tender.bids) < 2 ) && (lot_awards.length === 0))) {
                 return false;
             } else {
-                return true;
+                if (count_lot_bids(lot, tender.bids) > 0) {
+                    return true;
+                }
             }
         } else {
             if (count_lot_bids(lot, tender.bids) > 0) {
@@ -321,10 +323,11 @@ function(doc) {
 
         } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
             if( (tender.numberOfBids < 2) && !('awards' in tender)) {
-                log('skip tender '+tender.id + " bids: "+ tender.numberOfBids);
                 return false;
             } else {
-                return true;
+                if (tender.numberOfBids > 0) {
+                    return true;
+                }
             }
         } else {
             if (tender.numberOfBids > 0) {
