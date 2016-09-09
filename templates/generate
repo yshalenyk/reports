@@ -62,10 +62,17 @@ for broker in $WORK_BROKERS;do
 
 
     FILE_PATTERN="${WORK_DIR}/${broker}@$START--$END"
-    for cmd in bids tenders invoices refunds; do
+    for cmd in bids invoices; do
         echo "Generating ${cmd} for ${broker}"
         "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END"
     done
+    
+    for cmd in tenders refunds; do 
+        echo "Generating ${cmd} for ${broker}"
+        "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END" -i {{parts.buildout.directory}}/ignore.txt
+    done
+
+    
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
