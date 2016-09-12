@@ -1,6 +1,6 @@
 from couchdb import Server, Session
 from couchdb.http import Unauthorized, extract_credentials
-from config import create_db_url
+from reports.helpers import create_db_url
 import argparse
 import logging
 from ConfigParser import ConfigParser

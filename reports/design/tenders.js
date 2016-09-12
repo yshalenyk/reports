@@ -1,7 +1,19 @@
 function(doc) {
+    var find_first_revision_date =  function(doc) {
+        if ((typeof doc.revisions === 'undefined') || (doc.revisions.length === 0)) {
+            return '';
+        }
+        return doc.revisions[0].date || '';
+    }
+
 
     //tender checks
     var startDate = (doc.enquiryPeriod || {}).startDate;
+
+    if ( !startDate ) {
+        startDate = find_first_revision_date(doc);
+    }
+
     if ( (!startDate) || (startDate < "2016-04-01") ) {return;}
     if (doc.procurementMethod !== "open") {return;}
     if ((doc.mode || "") === "test") { return;}
@@ -16,7 +28,6 @@ function(doc) {
     var tender_status = doc.status;
     var tenderID = doc.tenderID;
     var datemodified = doc.dateModified;
-
 
 
     var count_lot_bids = function(lot, bids) {
@@ -275,7 +286,7 @@ function(doc) {
                 return true; 
             }
         } else if (tender.procurementMethodType === 'aboveThresholdEU') {
-            if (count_lot_qualifications(tender.qualifications, lot.id) > 1) {
+            if (count_lot_qualifications(( tender.qualifications || [] ), lot.id) > 1) {
                 return true; 
             }
 
@@ -288,7 +299,9 @@ function(doc) {
             if ( ( (count_lot_bids(lot, tender.bids) < 2 ) && (lot_awards.length === 0))) {
                 return false;
             } else {
-                return true;
+                if (count_lot_bids(lot, tender.bids) > 0) {
+                    return true;
+                }
             }
         } else {
             if (count_lot_bids(lot, tender.bids) > 0) {
@@ -304,16 +317,17 @@ function(doc) {
                 return true;
             }
         } else if (tender.procurementMethodType === 'aboveThresholdEU') {
-            if ( ( tender.qualifications.length || []) > 1) { 
+            if ( ( ( tender.qualifications || []).length) > 1) {
                 return true;
             }
 
         } else if (tender.procurementMethodType === 'aboveThresholdUA.defense') {
             if( (tender.numberOfBids < 2) && !('awards' in tender)) {
-                log('skip tender '+tender.id + " bids: "+ tender.numberOfBids);
                 return false;
             } else {
-                return true;
+                if (tender.numberOfBids > 0) {
+                    return true;
+                }
             }
         } else {
             if (tender.numberOfBids > 0) {

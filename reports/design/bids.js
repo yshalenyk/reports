@@ -1,5 +1,17 @@
 function(doc) {
 
+    var find_first_revision_date =  function(doc) {
+        if ((typeof doc.revisions === 'undefined') || (doc.revisions.length === 0)) {
+            return '';
+        }
+        return doc.revisions[0].date || '';
+    }
+
+    var startDate = (doc.enquiryPeriod||{}).startDate;
+    if (!startDate) {
+        startDate = find_first_revision_date(doc);
+    }
+
     if (doc.procurementMethod !== "open") {return;}
     if ((doc.mode || "") === "test") { return;}
 
@@ -7,7 +19,6 @@ function(doc) {
     if(!bids_disclojure_date) { return; }
 
     var id = doc._id;
-    var startDate = (doc.enquiryPeriod||{}).startDate;
     var tender_start_date = doc.tenderPeriod.startDate;
     var tenderID = doc.tenderID;
     var is_multilot = ( "lots" in doc )?true:false;
