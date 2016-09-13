@@ -81,7 +81,7 @@ for broker in $WORK_BROKERS;do
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
-    "${BIN_DIR}/zip" -p "$passwd"  -f "$FILE_PATTERN-bids.csv" "$FILE_PATTERN-invoices.csv"
+    "${BIN_DIR}/zip" -p "$passwd" -z "$WORK_DIR/$broker@$START--$END-invoices-bids.zip" -f "$FILE_PATTERN-bids.csv" "$FILE_PATTERN-invoices.csv"
     echo
 done
 echo
@@ -107,10 +107,16 @@ echo
 
 echo "Sending to s3"
 if [ "$ITERATE_BROKERS" == "all" ]; then
-    $BIN_DIR/send -n -f "$WORK_DIR/all@$START--$END-tenders.zip" "all@$START--$END-bids.zip"
+    $BIN_DIR/send -n -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip"
 else
     for broker in $ITERATE_BROKERS; do
-        find "$WORK_DIR" -maxdepth 1 -name "$broker@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
+        if [ "$broker" == "all" ]; then
+
+            $BIN_DIR/send -n -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip"
+        else
+            $BIN_DIR/send -n -f "$WORK_DIR/$broker@$START--$END-invoices-bids.zip"
+        fi
+
     done
 fi
 
