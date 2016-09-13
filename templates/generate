@@ -66,13 +66,16 @@ for broker in $WORK_BROKERS;do
         echo "Generating ${cmd} for ${broker}"
         "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END"
     done
-    
-    for cmd in tenders refunds; do 
+    if [ -f {{parts.buildout.directory}}/ignore.txt ]; then
+        args="-b $broker -p $START $END -i {{parts.buildout.directory}}/ignore.txt"
+    else
+        args="-b $broker -p $START $END"
+    fi
+    for cmd in tenders refunds; do
         echo "Generating ${cmd} for ${broker}"
-        "${BIN_DIR}/${cmd}" -b "$broker" -p "$START" "$END" -i {{parts.buildout.directory}}/ignore.txt
+        "${BIN_DIR}/${cmd}" $args
     done
 
-    
 
     passwd=$(pass "{{ zip_path }}/$broker")
     echo "Creating zip file with bids and invoices for ${broker}"
@@ -96,11 +99,17 @@ echo
 
 
 echo "Creating zip archive with refunds"
-find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "all@$START--$END-tenders.zip" -f
+find "$WORK_DIR" -maxdepth 1 -regex ".*@$START--$END-\(tenders\|refunds\).csv" | xargs "${BIN_DIR}/zip" -z "$WORK_DIR/all@$START--$END-tenders.zip" -f
 echo
+
+
 echo "Sending to s3"
-for broker in $ITERATE_BROKERS; do
-    find "$WORK_DIR" -maxdepth 1 -name "$broker@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
-done
+if [ "$ITERATE_BROKERS" == "all" ]; then
+    $BIN_DIR/send -n -f "$WORK_DIR/all@$START--$END-tenders.zip"
+else
+    for broker in $ITERATE_BROKERS; do
+        find "$WORK_DIR" -maxdepth 1 -name "$broker@$START--$END*.zip" -exec  $BIN_DIR/send -n -f "{}"  \;
+    done
+fi
 
 find "$WORK_DIR" -maxdepth 1 -name "*@$START--$END*.csv" -exec rm "{}" \;
