@@ -18,7 +18,7 @@ class InvoicesUtility(BaseBidsUtility):
     def row(self, record):
         value = float(record.get("value", 0))
         bid = record.get(u"bid", '')
-        if record.get('tender_start_date', '') < "2016-04-01" and \
+        if record.get('startdate', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
         if record[u'currency'] != u'UAH':

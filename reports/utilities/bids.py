@@ -15,7 +15,7 @@ class BidsUtility(BaseBidsUtility):
     def row(self, record):
         bid = record.get(u'bid', '')
         rate = None
-        if record.get('tender_start_date', '') < "2016-04-01" and \
+        if record.get('startdate', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
         row = list(record.get(col, '') for col in self.headers[:-2])
