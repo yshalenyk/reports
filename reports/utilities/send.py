@@ -6,6 +6,7 @@ import os
 import subprocess
 import smtplib
 import re
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE
@@ -14,6 +15,7 @@ from botocore.exceptions import ClientError
 from logging.config import fileConfig
 from ConfigParser import ConfigParser
 from reports.helpers import get_operations
+from datetime import datetime
 
 Logger = None
 
@@ -40,6 +42,11 @@ def get_parser():
         '--notify',
         action='store_true',
         help='Notification flag'
+    )
+    parser.add_argument(
+        '-t',
+        '--timestamp',
+        help='Initial timestamp'
     )
     return parser
 
@@ -75,7 +82,9 @@ class AWSClient(object):
         template = self.template_env.get_template('email.html')
         return template.render(context)
 
-    def send_files(self, files):
+    def send_files(self, files, timestamp=''):
+        if not timestamp:
+            timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S-%f")
         cred = self._update_credentials(self.s3_cred_path)
 
         s3 = boto3.client(
@@ -87,11 +96,12 @@ class AWSClient(object):
 
         for f in files:
             entry = {}
-            key = os.path.basename(f)
-            broker = key.split('@')[0]
-            entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
+            file_name = os.path.basename(f)
+            key = '/'.join([timestamp, file_name])
+            broker = file_name.split('@')[0]
+            entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file_name))
             entry['broker'] = broker
-            operations = get_operations(key)
+            operations = get_operations(file_name)
             entry['encrypted'] = 'bids' in operations
             if len(operations) == 2:
                 entry['type'] = ' and '.join(operations)
@@ -140,7 +150,7 @@ def run():
     args = parser.parse_args()
 
     client = AWSClient(args.config)
-    client.send_files(args.files)
+    client.send_files(args.files, args.timestamp)
     for broker in client.links:
         print "Url for {} ==> {}\n".format(broker['broker'], broker['link'])
     if args.notify:
