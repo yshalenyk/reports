@@ -33,7 +33,6 @@ def get_parser():
         '-f',
         '--file',
         nargs='+',
-        required=True,
         dest='files',
         help='Files to send'
     )
@@ -47,6 +46,12 @@ def get_parser():
         '-t',
         '--timestamp',
         help='Initial timestamp'
+    )
+    parser.add_argument(
+        '-e',
+        '--exists',
+        action='store_true',
+        help='Send emails with previously generated files; timestamp required'
     )
     return parser
 
@@ -82,6 +87,19 @@ class AWSClient(object):
         template = self.template_env.get_template('email.html')
         return template.render(context)
 
+    def get_entry(self, file_name):
+        entry = {}
+        broker = file_name.split('@')[0]
+        entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file_name))
+        entry['broker'] = broker
+        operations = get_operations(file_name)
+        entry['encrypted'] = 'bids' in operations
+        if len(operations) == 2:
+            entry['type'] = ' and '.join(operations)
+        else:
+            entry['type'] = ', '.join(operations)
+        return entry
+
     def send_files(self, files, timestamp=''):
         if not timestamp:
             timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S-%f")
@@ -95,18 +113,9 @@ class AWSClient(object):
         )
 
         for f in files:
-            entry = {}
             file_name = os.path.basename(f)
+            entry = self.get_entry(file_name)
             key = '/'.join([timestamp, file_name])
-            broker = file_name.split('@')[0]
-            entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file_name))
-            entry['broker'] = broker
-            operations = get_operations(file_name)
-            entry['encrypted'] = 'bids' in operations
-            if len(operations) == 2:
-                entry['type'] = ' and '.join(operations)
-            else:
-                entry['type'] = ', '.join(operations)
             try:
                 s3.upload_file(
                     f,
@@ -144,13 +153,36 @@ class AWSClient(object):
         finally:
             smtpserver.close()
 
+    def send_from_timestamp(self, timestamp):
+        cred = self._update_credentials(self.s3_cred_path)
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=cred.get('AWS_DEFAULT_REGION')
+        )
+        for item in s3.list_objects(Bucket=self.bucket, Prefix=timestamp)['Contents']:
+            entry = self.get_entry(os.path.basename(item['Key']))
+            entry['link'] = s3.generate_presigned_url(
+                    'get_object',
+                    Params={'Bucket': self.bucket, 'Key': item['Key']},
+                    ExpiresIn=self.expires,
+                )
+            self.links.append(entry)
+
 
 def run():
     parser = get_parser()
     args = parser.parse_args()
-
     client = AWSClient(args.config)
-    client.send_files(args.files, args.timestamp)
+    if args.exists:
+        if not args.timestamp:
+            print "Timestamp is required"
+            sys.exit(1)
+        client.send_from_timestamp(args.timestamp)
+    else:
+        client.send_files(args.files, args.timestamp)
     for broker in client.links:
         print "Url for {} ==> {}\n".format(broker['broker'], broker['link'])
     if args.notify:
