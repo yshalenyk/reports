@@ -133,6 +133,8 @@ class BaseUtility(object):
     def write_csv(self):
         if not self.headers:
             raise ValueError
+        if not os.path.exists(os.path.dirname(os.path.abspath(self.put_path))):
+            os.makedirs(os.path.dirname(os.path.abspath(self.put_path)))
         with open(self.put_path, 'w') as out_file:
             writer = csv.writer(out_file)
             writer.writerow(self.headers)

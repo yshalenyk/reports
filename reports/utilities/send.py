@@ -6,6 +6,7 @@ import os
 import subprocess
 import smtplib
 import re
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE
@@ -13,35 +14,11 @@ from jinja2 import Environment, PackageLoader
 from botocore.exceptions import ClientError
 from logging.config import fileConfig
 from ConfigParser import ConfigParser
-from reports.helpers import get_operations
+from reports.helpers import get_operations, get_send_args_parser
+from datetime import datetime
 
 Logger = None
 
-
-def get_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-c',
-        '--config',
-        dest='config',
-        required=True,
-        help='Path to configuration file'
-    )
-    parser.add_argument(
-        '-f',
-        '--file',
-        nargs='+',
-        required=True,
-        dest='files',
-        help='Files to send'
-    )
-    parser.add_argument(
-        '-n',
-        '--notify',
-        action='store_true',
-        help='Notification flag'
-    )
-    return parser
 
 
 class AWSClient(object):
@@ -63,6 +40,15 @@ class AWSClient(object):
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
         self.links = []
+        self._brokers = []
+
+    @property
+    def brokers(self):
+        return self._brokers
+
+    @brokers.setter
+    def brokers(self, brokers):
+        self._brokers = brokers
 
     def _update_credentials(self, path):
         cmd = "pass {}".format(path)
@@ -75,7 +61,22 @@ class AWSClient(object):
         template = self.template_env.get_template('email.html')
         return template.render(context)
 
-    def send_files(self, files):
+    def get_entry(self, file_name):
+        entry = {}
+        broker = file_name.split('@')[0]
+        entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', file_name))
+        entry['broker'] = broker
+        operations = get_operations(file_name)
+        entry['encrypted'] = 'bids' in operations
+        if len(operations) == 2:
+            entry['type'] = ' and '.join(operations)
+        else:
+            entry['type'] = ', '.join(operations)
+        return entry
+
+    def send_files(self, files, timestamp=''):
+        if not timestamp:
+            timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S-%f")
         cred = self._update_credentials(self.s3_cred_path)
 
         s3 = boto3.client(
@@ -86,17 +87,9 @@ class AWSClient(object):
         )
 
         for f in files:
-            entry = {}
-            key = os.path.basename(f)
-            broker = key.split('@')[0]
-            entry['period'] = '--'.join(re.findall(r'\d{4}-\d{2}-\d{2}', key))
-            entry['broker'] = broker
-            operations = get_operations(key)
-            entry['encrypted'] = 'bids' in operations
-            if len(operations) == 2:
-                entry['type'] = ' and '.join(operations)
-            else:
-                entry['type'] = ', '.join(operations)
+            file_name = os.path.basename(f)
+            entry = self.get_entry(file_name)
+            key = '/'.join([timestamp, file_name])
             try:
                 s3.upload_file(
                     f,
@@ -129,20 +122,48 @@ class AWSClient(object):
                 msg['Subject'] = 'Prozorro Billing: {} {} ({})'.format(context['broker'], context['type'], context['period'])
                 msg['From'] = self.verified_email
                 msg['To'] = COMMASPACE.join(recipients)
-
-                smtpserver.sendmail(self.verified_email, recipients,  msg.as_string())
+                if (not self.brokers) or (self.brokers and context['broker'] in self.brokers):
+                    smtpserver.sendmail(self.verified_email, recipients,  msg.as_string())
         finally:
             smtpserver.close()
 
+    def send_from_timestamp(self, timestamp):
+        cred = self._update_credentials(self.s3_cred_path)
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=cred.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=cred.get('AWS_DEFAULT_REGION')
+        )
+        for item in s3.list_objects(Bucket=self.bucket, Prefix=timestamp)['Contents']:
+            entry = self.get_entry(os.path.basename(item['Key']))
+            entry['link'] = s3.generate_presigned_url(
+                    'get_object',
+                    Params={'Bucket': self.bucket, 'Key': item['Key']},
+                    ExpiresIn=self.expires,
+                )
+            self.links.append(entry)
+
 
 def run():
-    parser = get_parser()
+    parser = get_send_args_parser()
     args = parser.parse_args()
-
     client = AWSClient(args.config)
-    client.send_files(args.files)
+
+    if args.brokers:
+        client.brokers = args.brokers
+
+    if args.exists:
+        if not args.timestamp:
+            print "Timestamp is required"
+            sys.exit(1)
+        client.send_from_timestamp(args.timestamp)
+    else:
+        client.send_files(args.files, args.timestamp)
     for broker in client.links:
-        print "Url for {} ==> {}\n".format(broker['broker'], broker['link'])
+        if (not client.brokers) or (client.brokers and broker['broker'] in client.brokers):
+            print "Url for {} ==> {}\n".format(broker['broker'], broker['link'])
     if args.notify:
         client.send_emails()
 

@@ -211,3 +211,46 @@ def get_operations(name):
     words = re.findall(r'\w+', name)
     return [w for w in words
             if w in ['bids', 'invoices', 'refunds', 'tenders']]
+
+
+def get_send_args_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-c',
+        '--config',
+        dest='config',
+        required=True,
+        help='Path to configuration file'
+    )
+    parser.add_argument(
+        '-f',
+        '--file',
+        nargs='+',
+        dest='files',
+        help='Files to send'
+    )
+    parser.add_argument(
+        '-n',
+        '--notify',
+        action='store_true',
+        help='Notification flag'
+    )
+    parser.add_argument(
+        '-e',
+        '--exists',
+        action='store_true',
+        help='Send mails from existing directory; timestamp required'
+    )
+    parser.add_argument(
+        '-t',
+        '--timestamp',
+        help='Initial run timestamp'
+    )
+    parser.add_argument(
+        '-b',
+        '--brokers',
+        nargs='+',
+        help='Recipients'
+    )
+
+    return parser
