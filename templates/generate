@@ -47,7 +47,7 @@ function generate_for_broker () {
             echo "generation $cmd for $broker"
             "$BIN_DIR/$cmd" -b "$broker" -p "$START" "$END"
         done
-        
+
     fi
 }
 
@@ -66,14 +66,14 @@ function parse_date () {
     local start=""
     local end=""
     start=$(echo "$date" | awk -F'--' '{print $1}'); end=$(echo "$date" | awk -F'--' '{print $2}')
-    local IFS='-' read -r year month day< <(echo "$start")
+    IFS='-' read -r year month day< <(echo "$start")
     if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ]; then
         usage
         exit
     else
         START=$(date -d"$year-$month-$day" +'%Y-%m-%d')
     fi
-    local IFS='-' read -r year month day< <(echo "$end")
+    IFS='-' read -r year month day< <(echo "$end")
     if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ]; then
         usage
         exit
