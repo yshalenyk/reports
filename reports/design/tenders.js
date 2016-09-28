@@ -40,6 +40,13 @@ function(doc) {
         }, 0) || 0;
     };
 
+    var filter_bids = function(bids) {
+        var min_date =  Date.parse("2016-04-01T00:00:00+03:00");
+        return bids.filter(function(bid) {
+            var bid_date =  Date.parse(bid.date);
+            return ((["invalid", "deleted"].indexOf(bid.status || "active") === -1) && (+bid_date > +min_date));
+        });
+    };
 
     var count_lot_qualifications = function(qualifications, lot_id) {
         if ( (typeof qualifications === 'undefined') || (qualifications.length === 0) ) {
@@ -49,8 +56,6 @@ function(doc) {
             return qualification.lotID === lot_id;
         }).length;
     }
-
-
 
     var max_date = function (obj) { 
         //helper function to find max date in object 
@@ -281,8 +286,10 @@ function(doc) {
 
     var check_lot = function(lot, tender) {
 
+        var bids = filter_bids(tender.bids || []);
+
         if ( tender.procurementMethodType === 'aboveThresholdUA' ) {
-            if (count_lot_bids(lot, tender.bids) > 1) {
+            if (count_lot_bids(lot, bids) > 1) {
                 return true; 
             }
         } else if (tender.procurementMethodType === 'aboveThresholdEU') {
@@ -296,15 +303,15 @@ function(doc) {
                     return a.lotID === lot.id;
                 })
             ) : [];
-            if ( ( (count_lot_bids(lot, tender.bids) < 2 ) && (lot_awards.length === 0))) {
+            if ( ( (count_lot_bids(lot, bids) < 2 ) && (lot_awards.length === 0))) {
                 return false;
             } else {
-                if (count_lot_bids(lot, tender.bids) > 0) {
+                if (count_lot_bids(lot, bids) > 0) {
                     return true;
                 }
             }
         } else {
-            if (count_lot_bids(lot, tender.bids) > 0) {
+            if (count_lot_bids(lot, bids) > 0) {
                 return true; 
             }
         }
