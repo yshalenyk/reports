@@ -13,6 +13,7 @@ END="$(date  +'%Y-%m')-01"
 BROKERS="$ALL_BROKERS all"
 BROKERS_FILE_PATTERN="bids-invoices"
 NOTIFY_FLAG=""
+NOTIFY_BROKERS=""
 
 function create_archive_for_broker () {
     local passwd=""
@@ -119,7 +120,6 @@ function create_all_bids() {
         sort "$WORK_DIR/$br@$START--$END-bids.csv" | head -n -1 >> "$WORK_DIR/all@$START--$END-bids.csv"
     done
 }
-
 function create_all_tenders_zip() {
     local brokers="$1"
     local files=""
@@ -146,10 +146,26 @@ function create_all_bids_zip() {
 function send_and_notify() {
 
     local broker="$1"
-    if [ "$broker" == "all" ]; then
-        $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip" --timestamp $RUN_TIME
+    if [[ -z $NOTIFY_BROKERS ]]; then
+        if [ "$broker" == "all" ]; then
+            $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip" --timestamp $RUN_TIME
+        else
+            $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/$broker@$START--$END-$BROKERS_FILE_PATTERN.zip" --timestamp $RUN_TIME
+        fi
     else
-        $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/$broker@$START--$END-$BROKERS_FILE_PATTERN.zip" --timestamp $RUN_TIME
+        if [[ "$broker" == *$NOTIFY_BROKERS* ]]; then
+            if [ "$broker" == "all" ]; then
+                $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip" --timestamp $RUN_TIME
+            else
+                $BIN_DIR/send $NOTIFY_FLAG -f "$WORK_DIR/$broker@$START--$END-$BROKERS_FILE_PATTERN.zip" --timestamp $RUN_TIME
+            fi
+        else
+            if [ "$broker" == "all" ]; then
+                $BIN_DIR/send  -f "$WORK_DIR/all@$START--$END-tenders.zip" "$WORK_DIR/all@$START--$END-bids.zip" --timestamp $RUN_TIME
+            else
+                $BIN_DIR/send  -f "$WORK_DIR/$broker@$START--$END-$BROKERS_FILE_PATTERN.zip" --timestamp $RUN_TIME
+            fi
+        fi
     fi
 }
 
@@ -158,8 +174,9 @@ function clean_up() {
 }
 
 function generate() {
+    echo " Run timestamp: $RUN_TIME"
     local br=${BROKERS/all/}
-    if [ $BROKERS == "all" ]; then
+    if [ "$BROKERS" == "all" ]; then
         for broker in $ALL_BROKERS; do
             generate_for_broker "$broker"
         done
@@ -210,8 +227,13 @@ while [ "$1" != "" ]; do
             parse_notification $val
             ;;
         --timestamp)
-            RUN_TIME=$(echo $VALUE | sed 's/^[^=]*=//g')
+            FROM_TIMESTAMP="TRUE"
+            TIMESTAMP=$(echo $VALUE | sed 's/^[^=]*=//g')
             ;;
+        --notify-brokers)
+            NOTIFY_BROKERS=$(echo "$VALUE" | sed 's/^[^=]*=//g' | sed "s/,/ /g")
+            ;;
+
         *)
             echo "Start generation using default options"
             ;;
@@ -219,4 +241,14 @@ while [ "$1" != "" ]; do
     shift
 done
 
-generate
+if [[ -z $FROM_TIMESTAMP ]]; then
+    generate
+else
+    if [[ -z $NOTIFY_BROKERS ]]; then
+        $BIN_DIR/send -e -t "$TIMESTAMP" $NOTIFY_FLAG
+    else
+        $BIN_DIR/send -e -t "$TIMESTAMP" $NOTIFY_FLAG --brokers $NOTIFY_BROKERS
+    fi
+    
+fi
+
