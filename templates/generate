@@ -191,9 +191,10 @@ function generate() {
             send_and_notify "$broker"
         done
         if [[ $BROKERS == *"all"* ]]; then
-            create_all_bids $br
-            create_all_bids_zip $br
-            create_all_tenders_zip $br
+            local brr="$br"
+            create_all_bids "$brr"
+            create_all_bids_zip "$brr"
+            create_all_tenders_zip "$brr"
             send_and_notify "all"
         fi
     fi
