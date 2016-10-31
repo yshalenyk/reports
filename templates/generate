@@ -6,8 +6,15 @@ BIN_DIR="{{parts.buildout.directory}}/bin"
 ZIP_PATH={{ zip_path }}
 RUN_TIME=$(python -c "from datetime import datetime; print datetime.now().strftime('%Y-%m-%d/%H-%M-%S-%f')")
 
+curr_month=$(date +"%m")
+prev_month=$(date -d'-1 month' +"%m")
 
 START="$(date -d'-1 month' +'%Y-%m')-01"
+
+if [ $curr_month == $prev_month ]; then
+    START="$(date -d'-1 month -1 day' +'%Y-%m')-01"
+fi
+
 END="$(date  +'%Y-%m')-01"
 
 BROKERS="$ALL_BROKERS all"
