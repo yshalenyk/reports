@@ -20,8 +20,16 @@ function(doc) {
         }
     }
 
-    if ( (!startDate) || (startDate < "2016-04-01") ) {return;}
-    if (doc.procurementMethod !== "open") {return;}
+    if ((!startDate) || (startDate < "2016-04-01")) {return;}
+    if (doc.procurementMethod !== "open") {
+        if (doc.procurementMethodType.indexOf('stage2') !== -1) {
+            if (doc.procurementMethod !== 'selective') {
+                return;
+            } 
+        } else {
+            return;
+        }
+    }
     if ((doc.mode || "") === "test") { return;}
 
     var bids_disclojure_date = (doc.qualificationPeriod || {}).startDate || (doc.awardPeriod || {}).startDate || null;
@@ -138,7 +146,7 @@ function(doc) {
         this.bids_disclosure_standstill = new Date(bids_disclojure_date);
         if ('date' in tender) {
             if (['complete', 'cancelled', 'unsuccessful'].indexOf(tender.status) !== -1) {
-                if ((tender.status === 'cancelled') && (tender.procurementMethodType.lastIndexOf('competitiveDialogue', 0) !== 0)) {
+                if (tender.status === 'cancelled') {
                     if ((new Date(tender.date)) < this.bids_disclosure_standstill) {
                         this.tender_date = null;
                     } else {
@@ -183,7 +191,7 @@ function(doc) {
         if ('date' in lot) {
             if (['complete', 'cancelled', 'unsuccessful'].indexOf(lot.status) !== -1) {
                 if (this.status === 'cancelled') {
-                    if (((new Date(lot.date)) < this.tender_handler.bids_disclosure_standstill) && (tender.procurementMethodType.lastIndexOf('competitiveDialogue', 0) !== 0)) {
+                    if ((new Date(lot.date)) < this.tender_handler.bids_disclosure_standstill) {
                         this.lot_date = null;
                     } else {
                         this.lot_date = new Date(lot.date);
@@ -201,7 +209,7 @@ function(doc) {
         } else { 
             switch(this.status) {
             case 'unsuccessful':
-                this.lot_date = find_awards_max_date(( tender.awards || [] ).filter(function(award) {
+                this.lot_date = find_awards_max_date((tender.awards || []).filter(function(award) {
                     return award.lotID === lot.id;
                 }));
                 break;
@@ -310,7 +318,6 @@ function(doc) {
                     return true;
                 }
                 break;
-
             case 'aboveThresholdUA.defense':
                 var lot_awards = ('awards' in tender) ? (
                     tender.awards.filter(function(a) {
@@ -376,7 +383,7 @@ function(doc) {
         var handler = new Handler(tender);
         if (handler.is_multilot) {
             tender.lots.forEach(function(lot){
-                if ( check_lot(lot, tender) ) {
+                if (check_lot(lot, tender)) {
                     var lot_handler = new lotHandler(lot, tender);
                     if (lot_handler.lot_date !== null) {
                         emitter.lot(lot, lot_handler.lot_date);
