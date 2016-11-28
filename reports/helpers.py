@@ -252,5 +252,11 @@ def get_send_args_parser():
         nargs='+',
         help='Recipients'
     )
+    parser.add_argument(
+        '-i',
+        '--include',
+        nargs='+',
+        help='Filetype f'
+    )
 
     return parser

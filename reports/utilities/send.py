@@ -20,7 +20,6 @@ from datetime import datetime
 Logger = None
 
 
-
 class AWSClient(object):
 
     def __init__(self, config):
@@ -39,15 +38,7 @@ class AWSClient(object):
         self.template_env = Environment(
                 loader=PackageLoader('reports', 'templates'))
         self.links = []
-        self._brokers = []
-
-    @property
-    def brokers(self):
-        return self._brokers
-
-    @brokers.setter
-    def brokers(self, brokers):
-        self._brokers = brokers
+        self.brokers = []
 
     def _update_credentials(self, path):
         cmd = "pass {}".format(path)
@@ -90,10 +81,7 @@ class AWSClient(object):
             entry = self.get_entry(file_name)
             key = '/'.join([timestamp, file_name])
             try:
-                s3.upload_file(
-                    f,
-                    self.bucket,
-                    key)
+                s3.upload_file(f, self.bucket, key)
                 entry['link'] = s3.generate_presigned_url(
                     'get_object',
                     Params={'Bucket': self.bucket, 'Key': key},
@@ -126,7 +114,7 @@ class AWSClient(object):
         finally:
             smtpserver.close()
 
-    def send_from_timestamp(self, timestamp):
+    def send_from_timestamp(self, timestamp, ops=False):
         cred = self._update_credentials(self.s3_cred_path)
 
         s3 = boto3.client(
@@ -135,14 +123,25 @@ class AWSClient(object):
             aws_secret_access_key=cred.get('AWS_SECRET_ACCESS_KEY'),
             region_name=cred.get('AWS_DEFAULT_REGION')
         )
-        for item in s3.list_objects(Bucket=self.bucket, Prefix=timestamp)['Contents']:
-            entry = self.get_entry(os.path.basename(item['Key']))
-            entry['link'] = s3.generate_presigned_url(
-                    'get_object',
-                    Params={'Bucket': self.bucket, 'Key': item['Key']},
-                    ExpiresIn=self.expires,
+        response = s3.list_objects(Bucket=self.bucket, Prefix=timestamp)
+        try:
+            content = response['Contents']
+        except KeyError:
+            Logger.fatal('No such key: {}'.format(timestamp), stdout=True)
+            sys.exit()
+
+        for item in content:
+            key = item['Key']
+            if ops and (ops == '-'.join(get_operations(key))):
+                entry = self.get_entry(os.path.basename(item['Key']))
+                entry['link'] = s3.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': self.bucket, 'Key': item['Key']},
+                        ExpiresIn=self.expires,
                 )
-            self.links.append(entry)
+                self.links.append(entry)
+            else:
+                continue
 
 
 def run():
@@ -157,7 +156,9 @@ def run():
         if not args.timestamp:
             print "Timestamp is required"
             sys.exit(1)
-        client.send_from_timestamp(args.timestamp)
+        if not args.include:
+            print 'Specify file contents'
+        client.send_from_timestamp(args.timestamp, '-'.join(args.include))
     else:
         client.send_files(args.files, args.timestamp)
     for broker in client.links:
