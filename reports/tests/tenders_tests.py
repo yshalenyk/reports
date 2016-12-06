@@ -57,6 +57,7 @@ class ReportTendersTestCase(BaseTenderUtilityTest):
             "enquiryPeriod": {
                 "startDate": '2016-04-17T13:32:25.774673+02:00',
             },
+            'awardPeriod': {'startDate': '2016-04-22T13:32:25.774673+02:00'},
             "contracts": [{
                 "status": "unsuccessful",
             }],
@@ -66,7 +67,11 @@ class ReportTendersTestCase(BaseTenderUtilityTest):
     def test_tenders_view_valid(self):
         data = {
             "owner": "test",
+            "status": "complete",
+            "date": '2016-04-22T13:32:25.774673+02:00',
             "procurementMethod": "open",
+            'numberOfBids': 2,
+            'awardPeriod': {'startDate': '2016-04-22T13:32:25.774673+02:00'},
             "enquiryPeriod": {
                 "startDate": '2016-04-17T13:32:25.774673+02:00',
             },
@@ -84,7 +89,7 @@ class ReportTendersTestCase(BaseTenderUtilityTest):
         self.assertLen(1, data)
         response = list(self.utility.response)
         self.assertEqual(
-                "2016-06-22T11:32:25.774", response[0]['key'][1])
+                u"2016-04-22T11:32:25.774", response[0]['key'][1])
 
 
 class ReportTendersUtilityTestCase(BaseTenderUtilityTest):
@@ -98,7 +103,11 @@ class ReportTendersUtilityTestCase(BaseTenderUtilityTest):
     def test_tenders_utility_output(self):
         data = {
             "owner": "test",
+            "status": "complete",
+            "date": '2016-04-22T13:32:25.774673+02:00',
             "procurementMethod": "open",
+            'numberOfBids': 2,
+            'awardPeriod': {'startDate': '2016-04-22T13:32:25.774673+02:00'},
             "enquiryPeriod": {
                 "startDate": '2016-04-17T13:32:25.774673+02:00',
             },
@@ -125,7 +134,7 @@ class ReportTendersUtilityTestCase(BaseTenderUtilityTest):
                 mock.call().write(','.join(self.utility.headers) + '\r\n'),
                 mock.call().write(
                     '0006651836f34bcda9a030c0bf3c0e6e,'
-                    'UA-2016-11-12-000150,,UAH,general,1000,,5.0\r\n'
+                    'UA-2016-11-12-000150,,complete,,UAH,general,1000,,5.0\r\n'
                 ),
                 mock.call().__exit__(None, None, None),
             ]

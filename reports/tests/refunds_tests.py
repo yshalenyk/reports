@@ -3,30 +3,41 @@ import mock
 from reports.tests.base import BaseRefundsUtilityTest
 from copy import copy
 
-
-test_award_period = '2016-04-17T13:32:25.774673+02:00'
-
+test_bids = [
+                    {
+                        "date": "2016-04-07T16:36:58.983102+03:00",
+                        "owner": "test",
+                        "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                        "lotValues": [
+                            {
+                                "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                                "date": "2016-04-07T16:36:58.983062+03:00",
+                            }
+                        ],
+                    }
+                ]
+test_lots = [
+                    {
+                        "status": "complete",
+                        "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": '2016-04-17T13:32:25.774673+02:00',
+                        "value": {
+                            "currency": "UAH",
+                            "amount": 2000,
+                            "valueAddedTaxIncluded": False,
+                        },
+                    }
+                ]
 
 class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
 
     def test_invoices_utility_output(self):
         self.utility.counter = [0 for _ in self.utility.config.payments]
-        data = {
-            "owner": "test",
-            "procurementMethod": "open",
-            "enquiryPeriod": {
-                "startDate": '2016-04-17T13:32:25.774673+02:00',
-            },
-            "contracts": [
-                {
-                    "status": "active",
-                    "date": '2016-04-22T13:32:25.774673+02:00',
-                    "dateSigned": '2016-05-22T13:32:25.774673+02:00',
-                    "documents": [{
-                        'datePublished': "2016-06-22T13:32:25.774673+02:00",
-                    }]
-                }
-            ],
+        data = { "awardPeriod": {
+                    "startDate": '2016-04-17T13:32:25.774673+02:00',
+                },
+                "lots": test_lots,
+                "bids": test_bids,
         }
         mock_csv = mock.mock_open()
         doc = copy(self.test_data)
@@ -60,7 +71,7 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
 
         self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
-        doc.update({'value': {'amount': 25000, 'currency': 'UAH'}})
+        doc['lots'][0]['value']= {'amount': 25000, 'currency': 'UAH'}
         self.utility.db.save(doc)
 
         mock_csv = mock.mock_open()
@@ -82,10 +93,9 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
                     self.utility.counter, self.utility.config.payments
                 )]), '\r\n'
             ))
-
         self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
-        doc.update({'value': {'amount': 55000, 'currency': 'UAH'}})
+        doc['lots'][0]['value']= {'amount': 55000, 'currency': 'UAH'}
         self.utility.db.save(doc)
 
         mock_csv = mock.mock_open()
@@ -110,7 +120,7 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
 
         self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
-        doc.update({'value': {'amount': 255000, 'currency': 'UAH'}})
+        doc['lots'][0]['value']= {'amount': 255000, 'currency': 'UAH'}
         self.utility.db.save(doc)
 
         mock_csv = mock.mock_open()
@@ -135,7 +145,7 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
 
         self.utility.counter = [0 for _ in self.utility.config.payments]
         doc = self.utility.db[doc['_id']]
-        doc.update({'value': {'amount': 1255000, 'currency': 'UAH'}})
+        doc['lots'][0]['value']= {'amount': 1255000, 'currency': 'UAH'}
         self.utility.db.save(doc)
 
         mock_csv = mock.mock_open()
@@ -160,44 +170,30 @@ class ReportRefundsUtilityTestCase(BaseRefundsUtilityTest):
             del self.utility.db[doc['_id']]
 
         doc = copy(self.test_data)
-        data = {
-            "owner": "test",
-            "procurementMethod": "open",
-            "enquiryPeriod": {
-                "startDate": '2016-04-17T13:32:25.774673+02:00',
-            },
-            "contracts": [
-                {
-                    "status": "active",
-                    "date": '2016-04-22T13:32:25.774673+02:00',
-                    "dateSigned": '2016-05-22T13:32:25.774673+02:00',
-                    "documents": [{
-                        'datePublished': "2016-06-22T13:32:25.774673+02:00",
-                    }]
-                }
-            ],
+        data = { 
+                "awardPeriod": {
+                    "startDate": '2016-04-17T13:32:25.774673+02:00',
+                },
+                "lots": test_lots,
+                "bids": test_bids,
         }
         doc.update(data)
         self.utility.db.save(doc)
-        doc.update({
-            '_id': 'sddsfsdd',
-            'value': {'amount': 25000, 'currency': 'UAH'}
-        })
+        doc.update({'_id': 'sddsfsdd'})
+        doc['lots'][0]['value']= {'amount': 25000, 'currency': 'UAH'}
+
         self.utility.db.save(doc)
-        doc.update({
-            '_id': 'sddsfsdf',
-            'value': {'amount': 55000, 'currency': 'UAH'}
-        })
+        doc.update({'_id': 'sddsfsdf'})
+        doc['lots'][0]['value']= {'amount': 55000, 'currency': 'UAH'}
+
         self.utility.db.save(doc)
-        doc.update({
-            '_id': 'sddsfsdfa',
-            'value': {'amount': 255000, 'currency': 'UAH'}
-        })
+        doc.update({'_id': 'sddsfsdfa'})
+        doc['lots'][0]['value']= {'amount': 255000, 'currency': 'UAH'}
+
         self.utility.db.save(doc)
-        doc.update({
-            '_id': 'sddsfsdfb',
-            'value': {'amount': 1255000, 'currency': 'UAH'}
-        })
+        doc.update({'_id': 'sddsfsdfb'})
+        doc['lots'][0]['value']= {'amount': 1255000, 'currency': 'UAH'}
+
         self.utility.db.save(doc)
         mock_csv = mock.mock_open()
         self.utility.counter = [0 for _ in self.utility.config.payments]

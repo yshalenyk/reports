@@ -204,11 +204,11 @@ class ReportBidsUtilityTestCase(BaseBidsUtilityTest):
 
     def test_bids_utility_output(self):
         data = {
-            "awardPeriod": {
-                "startDate": test_award_period,
-            },
-            'owner': 'test',
+            'awardPeriod': {'startDate': test_award_period },
             'bids': test_bids_valid[0],
+            "enquiryPeriod": {
+                "startDate": '2016-04-17T13:32:25.774673+02:00',
+            }
         }
         mock_csv = mock.mock_open()
         doc = copy(self.test_data)
