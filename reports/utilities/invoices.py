@@ -12,7 +12,6 @@ class InvoicesUtility(BaseBidsUtility):
         self.headers = thresholds_headers(
             self.config.thresholds
         )
-
         self.counter = [0 for _ in self.config.payments]
 
     def row(self, record):

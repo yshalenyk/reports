@@ -33,6 +33,9 @@ class ReportInvoicesUtilityTestCase(BaseInvoicesUtilityTest):
             "awardPeriod": {
                 "startDate": test_award_period,
             },
+            "enquiryPeriod": {
+                "startDate": test_award_period,
+            },
             'owner': 'test',
             'bids': test_bids_valid[0],
         }
@@ -170,6 +173,9 @@ class ReportInvoicesUtilityTestCase(BaseInvoicesUtilityTest):
         doc = copy(self.test_data)
         data = {
             "awardPeriod": {
+                "startDate": test_award_period,
+            },
+            "enquiryPeriod": {
                 "startDate": test_award_period,
             },
             'owner': 'test',
