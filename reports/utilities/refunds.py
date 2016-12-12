@@ -59,9 +59,9 @@ class RefundsUtility(BaseTendersUtility):
                 self.counter[i] += 1
 
     def rows(self):
+        self._rows = [self.counter, self.config.payments]
         for resp in self.response:
             self.row(resp['value'])
-        self._rows = [self.counter, self.config.payments]
         self._rows.append(
             [c * v for c, v in zip(self.counter, self.config.payments)]
         )

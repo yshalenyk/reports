@@ -6,15 +6,17 @@ import os.path
 test_data = {
     "procurementMethod": "open",
     "status": "complete",
-    "owner": "",
+    "owner": "test",
+    'tender': '0006651836f34bcda9a030c0bf3c0e6e',
     "_id": "0006651836f34bcda9a030c0bf3c0e6e",
     "tenderID": "UA-2016-11-12-000150",
     "dateModified": "2016-04-31T19:03:53.704712+03:00",
+    "date": "2016-04-31T19:03:53.704712+03:00",
     "tenderPeriod": {
         "startDate": "2016-11-13T15:15:00+02:00",
     },
     "enquiryPeriod": {
-        "startDate": "",
+        "startDate": "2016-11-13T15:15:00+02:00",
     },
     "contracts": [{
         "status": "",
@@ -40,8 +42,7 @@ test_data = {
         'kind': 'general',
     },
 
-}
-
+}         
 
 class MockCurrencyResponce(object):
     text = u'''[
