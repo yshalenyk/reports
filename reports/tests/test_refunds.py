@@ -7,7 +7,9 @@ from reports.utilities.refunds import RefundsUtility
 from copy import copy
 from reports.tests.utils import(
     get_mock_parser,
-    test_data
+    test_data,
+    assert_csv,
+    db
 )
 
 test_bids = [
@@ -36,36 +38,6 @@ test_lots = [
                     }
                 ]
 
-test_config = os.path.join(os.path.dirname(__file__), 'tests.ini')
-
-@pytest.fixture(scope='function')
-def db(request): 
-    conf = Config(test_config)
-    host = conf.get_option('db', 'host')
-    port = conf.get_option('db', 'port')
-    user = conf.get_option('user', 'username')
-    passwd = conf.get_option('user', 'password')
-
-    db_name = conf.get_option('db', 'name')
-    def create_db_url(host, port, user, passwd):
-        up = ''
-        if user and passwd:
-            up = '{}:{}@'.format(user, passwd)
-        url = 'http://{}{}:{}'.format(up, host, port)
-        return url
-    server = couchdb.Server(
-        create_db_url(host, port, user, passwd)
-    )  
-    if db_name not in server:
-        server.create(db_name)
-    def delete():
-        server.delete(db_name)
-    mock_parse = get_mock_parser()
-    with mock.patch('argparse.ArgumentParser.parse_args', mock_parse):
-        utility = RefundsUtility()
-    ut.counter = [0 for _ in utility.config.payments]
-    request.addfinalizer(delete)
-
 @pytest.fixture(scope='function')
 def ut(request):
     mock_parse = get_mock_parser()
@@ -73,6 +45,7 @@ def ut(request):
         return_value=['general'])
     with mock.patch('argparse.ArgumentParser.parse_args', mock_parse):
         utility = RefundsUtility()
+    ut.counter = [0 for _ in utility.config.payments]
     return utility
 
 def test_refunds_utility_output(db, ut):
@@ -89,26 +62,7 @@ def test_refunds_utility_output(db, ut):
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         assert ut.counter == [1, 0, 0, 0, 0]
-        calls = [
-            mock.call('test/test@---refunds.csv', 'w'),
-            mock.call().__enter__(),
-            mock.call().write(
-                str('{}{}'.format(','.join(ut.headers), '\r\n'))
-            ),
-            mock.call().write('{}{}'.format(','.join(
-                [str(i) for i in ut.counter]), '\r\n')
-            ),
-            mock.call().write('{}{}'.format(','.join(
-                [str(i) for i in ut.config.payments]), '\r\n')
-            ),
-            mock.call().write('{}{}'.format(','.join([
-                str(c * p) for c, p in zip(
-                    ut.counter, ut.config.payments
-                )]), '\r\n')
-            ),
-            mock.call().__exit__(None, None, None),
-        ]
-        mock_csv.assert_has_calls(calls)
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
 
 def test_refunds_utility_handler_check(db, ut):
     data = { "awardPeriod": {
@@ -121,27 +75,13 @@ def test_refunds_utility_handler_check(db, ut):
     doc.update(data)
     ut.db.save(doc)
     doc = ut.db[doc['_id']]
-    print doc
-    doc['lots'][0]['value']= {'amount': 25000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 25000, 'currency': 'UAH'}
     ut.db.save(doc)
-
     mock_csv = mock.mock_open()
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         assert ut.counter == [0, 1, 0, 0, 0]
-        mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-        handler = mock_csv()
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join(ut.headers), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(i) for i in ut.counter]), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(c * p) for c, p in zip(
-                ut.counter, ut.config.payments
-            )]), '\r\n'
-        ))
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
 
 def test_refunds_utility_middle_handler_check(db, ut):
     data = { "awardPeriod": {
@@ -154,27 +94,14 @@ def test_refunds_utility_middle_handler_check(db, ut):
     doc.update(data)
     ut.db.save(doc)
     doc = ut.db[doc['_id']]
-    doc['lots'][0]['value']= {'amount': 55000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 55000, 'currency': 'UAH'}
     ut.db.save(doc)
 
     mock_csv = mock.mock_open()
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         assert ut.counter == [0, 0, 1, 0, 0]
-        
-        mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-        handler = mock_csv()
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join(ut.headers), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(i) for i in ut.counter]), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(c * p) for c, p in zip(
-                ut.counter, ut.config.payments
-            )]), '\r\n'
-        ))
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
 
 def test_refunds_utility_correct_handler_check(db, ut):
     data = { "awardPeriod": {
@@ -187,27 +114,13 @@ def test_refunds_utility_correct_handler_check(db, ut):
     doc.update(data)
     ut.db.save(doc)
     doc = ut.db[doc['_id']]
-    doc['lots'][0]['value']= {'amount': 255000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 255000, 'currency': 'UAH'}
     ut.db.save(doc)
-
     mock_csv = mock.mock_open()
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
-        assert ut.counter== [0, 0, 0, 1, 0]
-        
-        mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-        handler = mock_csv()
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join(ut.headers), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(i) for i in ut.counter]), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(c * p) for c, p in zip(
-                ut.counter, ut.config.payments
-            )]), '\r\n'
-        ))
+        assert ut.counter == [0, 0, 0, 1, 0]
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
 
 def test_refunds_utility_last_handler_check(db, ut):
     data = { "awardPeriod": {
@@ -220,27 +133,13 @@ def test_refunds_utility_last_handler_check(db, ut):
     doc.update(data)
     ut.db.save(doc)
     doc = ut.db[doc['_id']]
-    doc['lots'][0]['value']= {'amount': 1255000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 1255000, 'currency': 'UAH'}
     ut.db.save(doc)
-
     mock_csv = mock.mock_open()
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
-        assert ut.counter== [0, 0, 0, 0, 1]
-        
-        mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-        handler = mock_csv()
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join(ut.headers), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(i) for i in ut.counter]), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(c * p) for c, p in zip(
-                ut.counter, ut.config.payments
-            )]), '\r\n'
-        ))
+        assert ut.counter == [0, 0, 0, 0, 1]
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
         del ut.db[doc['_id']]
 
 def test_refunds_utility_all_handlers_check(db, ut):
@@ -255,19 +154,19 @@ def test_refunds_utility_all_handlers_check(db, ut):
     doc.update(data)
     ut.db.save(doc)
     doc.update({'_id': 'sddsfsdd'})
-    doc['lots'][0]['value']= {'amount': 25000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 25000, 'currency': 'UAH'}
 
     ut.db.save(doc)
     doc.update({'_id': 'sddsfsdf'})
-    doc['lots'][0]['value']= {'amount': 55000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 55000, 'currency': 'UAH'}
 
     ut.db.save(doc)
     doc.update({'_id': 'sddsfsdfa'})
-    doc['lots'][0]['value']= {'amount': 255000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 255000, 'currency': 'UAH'}
 
     ut.db.save(doc)
     doc.update({'_id': 'sddsfsdfb'})
-    doc['lots'][0]['value']= {'amount': 1255000, 'currency': 'UAH'}
+    doc['lots'][0]['value'] = {'amount': 1255000, 'currency': 'UAH'}
 
     ut.db.save(doc)
     mock_csv = mock.mock_open()
@@ -275,21 +174,5 @@ def test_refunds_utility_all_handlers_check(db, ut):
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         assert ut.counter == [1, 1, 1, 1, 1]
-        
-        mock_csv.assert_called_once_with('test/test@---refunds.csv', 'w')
-        handler = mock_csv()
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join(ut.headers), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(i) for i in ut.counter]), '\r\n'
-        ))
-        handler.write.assert_any_call('{}{}'.format(
-            ','.join([str(c * p) for c, p in zip(
-                ut.counter, ut.config.payments)]
-            ), '\r\n'
-        ))
+        assert_csv(mock_csv, 'test/test@---refunds.csv', ut.headers, [ut.counter, ut.config.payments])
         del ut.db[doc['_id']]
-
-
- 

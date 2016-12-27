@@ -2,16 +2,17 @@ import pytest
 import mock
 import couchdb
 import os.path
+from copy import copy
 from reports.config import Config
 from reports.utilities import bids, invoices, tenders, refunds
 from reports.utilities.bids import BidsUtility
-from reports.core import BaseUtility
-from copy import copy
 from reports.tests.utils import(
     get_mock_parser,
-    test_data
+    test_data,
+    assert_csv,
+    db,
+    assertLen
 )
-
 
 test_bids_invalid = [
     [{
@@ -47,53 +48,14 @@ test_bids_valid = [
 
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
 
-test_config = os.path.join(os.path.dirname(__file__), 'tests.ini')
-
-@pytest.fixture(scope='function')
-def db(request): 
-    conf = Config(test_config)
-    host = conf.get_option('db', 'host')
-    port = conf.get_option('db', 'port')
-    user = conf.get_option('user', 'username')
-    passwd = conf.get_option('user', 'password')
-
-    db_name = conf.get_option('db', 'name')
-    def create_db_url(host, port, user, passwd):
-        up = ''
-        if user and passwd:
-            up = '{}:{}@'.format(user, passwd)
-        url = 'http://{}{}:{}'.format(up, host, port)
-        return url
-    server = couchdb.Server(
-        create_db_url(host, port, user, passwd)
-    )  
-    if db_name not in server:
-        server.create(db_name)
-    def delete():
-        server.delete(db_name)
-    request.addfinalizer(delete)
-
 @pytest.fixture(scope='function')
 def ut(request):
     mock_parse = get_mock_parser()
     with mock.patch('argparse.ArgumentParser.parse_args', mock_parse):
         utility = BidsUtility()
-    utility.get_db_connection()
     return utility
 
-    
-def assertLen(count, data):
-    mock_parse = get_mock_parser()
-    with mock.patch('argparse.ArgumentParser.parse_args', mock_parse):
-        utility = BidsUtility()
-    doc = copy(test_data)
-    doc.update(data)
-    utility.db.save(doc)
-    utility.get_response()
-    utility.response = list(utility.response)
-    assert count == len(utility.response)
-
-def test_bids_view_invalid_date(db):
+def test_bids_view_invalid_date(db, ut):
     data = {
         "awardPeriod": {
             "startDate": test_award_period,
@@ -101,9 +63,9 @@ def test_bids_view_invalid_date(db):
         'owner': 'teser',
         "bids": test_bids_invalid[0],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_bids_view_invalid_mode(db):
+def test_bids_view_invalid_mode(db, ut):
     data = {
         'mode': 'test',
         "awardPeriod": {
@@ -112,9 +74,9 @@ def test_bids_view_invalid_mode(db):
         'owner': 'teser',
         "bids": test_bids_valid[0],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_bids_view_invalid_status(db):
+def test_bids_view_invalid_status(db, ut):
     data = {
         "procurementMethod": "open",
         "awardPeriod": {
@@ -123,9 +85,9 @@ def test_bids_view_invalid_status(db):
         'owner': 'teser',
         'bids': test_bids_invalid[1],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_bids_view_invalid_method(db):
+def test_bids_view_invalid_method(db, ut):
     data = {
         "procurementMethod": "test",
         "awardPeriod": {
@@ -134,7 +96,7 @@ def test_bids_view_invalid_method(db):
         'owner': 'teser',
         'bids': test_bids_valid[0],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
 def test_bids_view_valid(db, ut):
     data = {
@@ -144,7 +106,7 @@ def test_bids_view_valid(db, ut):
         'owner': 'teser',
         'bids': test_bids_valid[0],
     }
-    assertLen(1, data)
+    assertLen(1, data, ut)
     ut.get_response()
     ut.response = list(ut.response)
     response = list(ut.response)
@@ -208,7 +170,7 @@ def test_bids_view_period(db, ut):
     ut.get_response()
     assert 2 == len(list(ut.response))
 
-def test_bids_view_with_lots(db):
+def test_bids_view_with_lots(db, ut):
     data = {
         "enquiryPeriod": {
             "startDate": '2016-04-17T13:32:25.774673+02:00',
@@ -242,7 +204,7 @@ def test_bids_view_with_lots(db):
             }
         ],
     }
-    assertLen(1, data)
+    assertLen(1, data, ut)
 
 def test_bids_utility_output(db, ut):
     data = {
@@ -259,19 +221,9 @@ def test_bids_utility_output(db, ut):
     ut.db.save(doc)
     with mock.patch('__builtin__.open', mock_csv):    
         ut.run()
-        calls = [
-            mock.call('test/test@---bids.csv', 'w'),
-            mock.call().__enter__(),
-            mock.call().write(
-                str(','.join(ut.headers) + '\r\n')),
-            mock.call().write(
-                '0006651836f34bcda9a030c0bf3c0e6e,'
-                'UA-2016-11-12-000150,,1000,UAH,'
-                '44931d9653034837baff087cfc2fb5ac,,7.0\r\n'
-            ),
-            mock.call().__exit__(None, None, None),
-        ]
-        mock_csv.assert_has_calls(calls)
+        row = [['0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,,1000,UAH,44931d9653034837baff087cfc2fb5ac,,7.0'],]
+        assert_csv(mock_csv, 'test/test@---bids.csv', ut.headers, row)
+        
 
 def test_bids_utility_output_with_lots(db, ut):
     data = {
@@ -313,16 +265,6 @@ def test_bids_utility_output_with_lots(db, ut):
     ut.db.save(doc)       
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
-        calls = [
-            mock.call('test/test@---bids.csv', 'w'),
-            mock.call().__enter__(),
-            mock.call().write(
-                str(','.join(ut.headers) + '\r\n')),
-            mock.call().write(
-                '0006651836f34bcda9a030c0bf3c0e6e,'
-                'UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,'
-                '2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,,7.0\r\n'
-            ),
-            mock.call().__exit__(None, None, None),
-        ]
-        mock_csv.assert_has_calls(calls)
+        row = [["0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,,7.0"],]
+        assert_csv(mock_csv, 'test/test@---bids.csv', ut.headers, row)
+        
