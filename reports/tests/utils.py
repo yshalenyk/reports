@@ -1,6 +1,10 @@
 # coding: utf-8
 import mock
 import os.path
+import pytest
+import couchdb
+from copy import copy
+from reports.config import Config
 
 
 test_data = {
@@ -68,6 +72,50 @@ def get_mock_parser():
     type(mock_parse.return_value).kind = mock.PropertyMock(
         return_value=['kind', 'general'])
     type(mock_parse.return_value).status = mock.PropertyMock(
-            return_value={'action': '', 'statuses': ['complete', 'active']})
+        return_value={'action': '', 'statuses': ['complete', 'active']})
 
     return mock_parse
+
+def assert_csv(csv, name , headers, rows):
+    csv.assert_called_once_with(name, 'w')
+    handler = csv()
+    handler.write.assert_any_call('{}{}'.format(
+        ','.join(headers), '\r\n'
+    ))
+    for row in rows:
+        handler.write.assert_any_call('{}{}'.format(
+            ','.join([str(i) for i in row]), '\r\n'
+        ))
+
+def assertLen(count, data, utility):  
+    doc = copy(test_data)
+    doc.update(data)
+    utility.db.save(doc)
+    utility.get_response()
+    utility.response = list(utility.response)
+    assert count == len(utility.response)
+
+@pytest.fixture(scope='function')
+def db(request):
+    conf = Config(test_config)
+    host = conf.get_option('db', 'host')
+    port = conf.get_option('db', 'port')
+    user = conf.get_option('user', 'username')
+    passwd = conf.get_option('user', 'password')
+
+    db_name = conf.get_option('db', 'name')
+    def create_db_url(host, port, user, passwd):
+        up = ''
+        if user and passwd:
+            up = '{}:{}@'.format(user, passwd)
+        url = 'http://{}{}:{}'.format(up, host, port)
+        return url
+    server = couchdb.Server(
+        create_db_url(host, port, user, passwd)
+    )
+    if db_name not in server:
+        server.create(db_name)
+    def delete():
+        server.delete(db_name)
+    request.addfinalizer(delete)
+

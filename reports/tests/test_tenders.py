@@ -7,35 +7,12 @@ from reports.utilities.tenders import TendersUtility
 from copy import copy
 from reports.tests.utils import(
     get_mock_parser,
-    test_data
+    test_data,
+    assert_csv,
+    db,
+    assertLen
 )
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
-
-test_config = os.path.join(os.path.dirname(__file__), 'tests.ini')
-
-@pytest.fixture(scope='function')
-def db(request): 
-    conf = Config(test_config)
-    host = conf.get_option('db', 'host')
-    port = conf.get_option('db', 'port')
-    user = conf.get_option('user', 'username')
-    passwd = conf.get_option('user', 'password')
-
-    db_name = conf.get_option('db', 'name')
-    def create_db_url(host, port, user, passwd):
-        up = ''
-        if user and passwd:
-            up = '{}:{}@'.format(user, passwd)
-        url = 'http://{}{}:{}'.format(up, host, port)
-        return url
-    server = couchdb.Server(
-        create_db_url(host, port, user, passwd)
-    )  
-    if db_name not in server:
-        server.create(db_name)
-    def delete():
-        server.delete(db_name)
-    request.addfinalizer(delete)
 
 @pytest.fixture(scope='function')
 def ut(request):    
@@ -46,20 +23,7 @@ def ut(request):
         utility = TendersUtility()
     return utility
 
-def assertLen(count, data):
-    mock_parse = get_mock_parser()
-    type(mock_parse.return_value).kind = mock.PropertyMock(
-        return_value=['general'])
-    with mock.patch('argparse.ArgumentParser.parse_args', mock_parse):
-        utility = TendersUtility()
-    doc = copy(test_data)
-    doc.update(data)
-    utility.db.save(doc)
-    utility.get_response()
-    utility.response = list(utility.response)
-    assert count == len(utility.response)
-
-def test_tenders_view_invalid_date(db):
+def test_tenders_view_invalid_date(db, ut):
     data = {
         "enquiryPeriod": {
             "startDate": '2016-03-17T13:32:25.774673+02:00',
@@ -71,9 +35,9 @@ def test_tenders_view_invalid_date(db):
                 "status": "active",
             }],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_tenders_view_invalid_method(db):
+def test_tenders_view_invalid_method(db, ut):
     data = {
         "procurementMethod": "test",
         "enquiryPeriod": {
@@ -85,9 +49,9 @@ def test_tenders_view_invalid_method(db):
                 "status": "active",
             }],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_tenders_view_invalid_mode(db):
+def test_tenders_view_invalid_mode(db, ut):
     data = {
         "mode": "test",
         "procurementMethod": "open",
@@ -100,9 +64,9 @@ def test_tenders_view_invalid_mode(db):
                 "status": "active",
             }],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
-def test_tenders_view_invalid_status(db):
+def test_tenders_view_invalid_status(db, ut):
     data = {
         "procurementMethod": "open",
         "enquiryPeriod": {
@@ -113,7 +77,7 @@ def test_tenders_view_invalid_status(db):
             "status": "unsuccessful",
         }],
     }
-    assertLen(0, data)
+    assertLen(0, data, ut)
 
 def test_tenders_view_valid(db, ut):
     data = {
@@ -137,14 +101,11 @@ def test_tenders_view_valid(db, ut):
             }
         ],
     }
-    assertLen(1, data)
+    assertLen(1, data, ut)
     ut.get_response()
     ut.response = list(ut.response)
     response = list(ut.response)
     assert u"2016-04-22T11:32:25.774" == response[0]['key'][1]
-
-
-
 
 def test_tenders_utility_output(db, ut):
     data = {
@@ -174,16 +135,6 @@ def test_tenders_utility_output(db, ut):
     ut.db.save(doc)
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
-        calls = [
-            mock.call('test/test@---tenders.csv', 'w'),
-            mock.call().__enter__(),
-            mock.call().write(','.join(ut.headers) + '\r\n'),
-            mock.call().write(
-                '0006651836f34bcda9a030c0bf3c0e6e,'
-                'UA-2016-11-12-000150,,complete,,UAH,general,1000,,5.0\r\n'
-            ),
-            mock.call().__exit__(None, None, None),
-        ]
-        mock_csv.assert_has_calls(calls)
-
-
+        row = [['0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,,complete,,UAH,general,1000,,5.0'],]
+        assert_csv(mock_csv, 'test/test@---tenders.csv', ut.headers, row)
+        

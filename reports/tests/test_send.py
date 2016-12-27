@@ -19,10 +19,7 @@ from mock import Mock, MagicMock
 def client():
     aws_client = AWSClient(test_config)
     aws_client._update_credentials = MagicMock(return_value={'AWS_ACCESS_KEY_ID':'user', 'AWS_SECRET_ACCESS_KEY': 'pass'})
-    yield aws_client
-
-
-
+    return aws_client
 
 def test_get_entry(client):
     """Check correct result"""
@@ -159,4 +156,3 @@ def test_send_from_timestamp(client):
         link = res_dict.get('link')
         assert link != None
         m.generate_presigned_url.assert_called_with('get_object', ExpiresIn='1209600', Params={'Bucket': 'some-name', 'Key': '2016-09-13/13-59-56-779740/broker1@2016-09-01--2016-10-01-bids-invoices.zip'})
-
