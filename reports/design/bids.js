@@ -1,4 +1,6 @@
 function(doc) {
+
+    if (doc.doc_type !== "Tender") {return;}
     function get_eu_tender_bids(tender) {
         var qualified_bids = (tender.qualifications || []).map(function(qualification) {
             return qualification.bidID;
@@ -12,7 +14,7 @@ function(doc) {
         var min_date =  Date.parse("2016-04-01T00:00:00+03:00");
         return bids.filter(function(bid) {
             var bid_date =  Date.parse(bid.date);
-            return ((["invalid", "deleted"].indexOf(bid.status || "active") === -1) && (+bid_date > +min_date));
+            return (((bid.status || "invalid") !== "active") && (+bid_date > +min_date));
         });
     };
 
