@@ -60,7 +60,7 @@ function(doc) {
         var min_date =  Date.parse("2016-04-01T00:00:00+03:00");
         return bids.filter(function(bid) {
             var bid_date =  Date.parse(bid.date);
-            return (((bid.status || "invalid") !== "active") && (+bid_date > +min_date));
+            return (((bid.status || "invalid") === "active") && (+bid_date > +min_date));
         });
     };
 
