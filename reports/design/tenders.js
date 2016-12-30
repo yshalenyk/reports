@@ -17,7 +17,7 @@ function(doc) {
 
     // only first stage is completed
     if (['competitiveDialogueEU', 'competitiveDialogueUA'].indexOf(doc.procurementMethodType) !== -1) {
-        if (doc.status === 'complete') {
+        if (['unsuccessful', 'cancelled'].indexOf(doc.status) === -1) {
             return;
         }
     }
@@ -316,7 +316,7 @@ function(doc) {
                 break;
             case 'competitiveDialogueUA':
             case 'competitiveDialogueEU':
-                if (((tender.qualifications || []).length) > 2) {
+                if (count_lot_qualifications((tender.qualifications || []), lot.id) > 2) {
                     return true;
                 }
                 break;
