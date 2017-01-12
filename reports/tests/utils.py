@@ -11,6 +11,7 @@ test_data = {
     "procurementMethod": "open",
     "status": "complete",
     "owner": "test",
+    "doc_type": "Tender",
     'tender': '0006651836f34bcda9a030c0bf3c0e6e',
     "_id": "0006651836f34bcda9a030c0bf3c0e6e",
     "tenderID": "UA-2016-11-12-000150",

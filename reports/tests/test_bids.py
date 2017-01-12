@@ -17,6 +17,7 @@ from reports.tests.utils import(
 test_bids_invalid = [
     [{
         "owner": "test",
+        "status": "invalid",
         "date": "2016-03-17T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
@@ -31,16 +32,19 @@ test_bids_invalid = [
 test_bids_valid = [
     [{
         "owner": "test",
+        "status": "active",
         "date": "2016-04-17T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
     [{  
         "owner": "test",
+        "status": "active",
         "date": "2016-05-05T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
 
     [{
+        "status": "active",
         "owner": "test",
         "date": "2016-05-10T13:32:25.774673+02:00",
         "id": "f55962b1374b43ddb886821c0582bc7f"
@@ -194,6 +198,7 @@ def test_bids_view_with_lots(db, ut):
             {
                 "date": "2016-04-07T16:36:58.983102+03:00",
                 "owner": "test",
+                "status": "active",
                 "id": "a22ef2b1374b43ddb886821c0582bc7dk",
                 "lotValues": [
                     {
@@ -248,6 +253,8 @@ def test_bids_utility_output_with_lots(db, ut):
         "bids": [
             {
                 "date": "2016-04-07T16:36:58.983102+03:00",
+                "status": "active",
+
                 "owner": "test",
                 "id": "a22ef2b1374b43ddb886821c0582bc7dk",
                 "lotValues": [
