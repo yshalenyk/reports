@@ -42,13 +42,25 @@ test_bids_valid = [
         "date": "2016-05-05T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
-
     [{
         "status": "active",
         "owner": "test",
         "date": "2016-05-10T13:32:25.774673+02:00",
         "id": "f55962b1374b43ddb886821c0582bc7f"
-    }]]
+    }],
+    [{
+        "status": "active",
+        "owner": "test",
+        "date": "2016-05-10T13:32:25.774673+02:00",
+        "id": "f55962b1374b43ddb886821c0582bc7f"
+    },
+    {
+        "status": "active",
+        "owner": "test1",
+        "date": "2016-05-10T13:42:25.774673+02:00",
+        "id": "f55962b1374b83ddb886821c0582bc7f"
+    }
+    ]]
 
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
 
@@ -101,6 +113,1523 @@ def test_bids_view_invalid_method(db, ut):
         'bids': test_bids_valid[0],
     }
     assertLen(0, data, ut)
+
+#  start new bids tests
+
+def test_bids_view_invalid_doc_type(db, ut):
+    data = {
+        "doc_type": "new Tender",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[2],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_EUprocurement_type_valid_data(db, ut):
+    data = {
+        "procurementMethodType": "aboveThresholdEU",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_procurement_typeEU_without_qualifications(db, ut):
+    data = {
+        "procurementMethodType": "aboveThresholdEU",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_have_no_disclojure_date(db, ut):
+    data = {
+        "awardPeriod": {
+            "startDate": "",
+        },
+        "qualificationPeriod": {
+                    "startDate": "",
+                },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_compet_dialog_stage2_fail_check(db, ut):
+    data = {
+        "procurementMethodType": "competitiveDialogueEU.stage2",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod": {
+                    "startDate": "",
+                },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_cancelled_tender(db, ut):
+    data = {
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "status": "active"
+                    },{
+                        "cancellationOf": "tender",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_cancelled_tender_invalid_time(db, ut):
+    # without tender.date
+    # (max_date( cancel ) < (new Date( bids_disclojure_date ))) == True
+    data = {
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    },{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod": {
+                    "startDate": "2016-11-13T15:15:00+02:00",
+                },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_cancelled_tender_before_award(db, ut):
+    # ((new Date(tender.date)) < (new Date(bids_disclojure_date))) == True
+    data = {
+        "date": "2016-10-31T19:00:00+03:00",
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": '2016-11-17T13:32:25.774673+02:00',
+        },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_cancelled_tender_after_award(db, ut):
+    # ((new Date(tender.date)) < (new Date(bids_disclojure_date))) == False
+    data = {
+        "date": "2016-11-25T19:00:00+03:00",
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": '2016-11-17T13:32:25.774673+02:00',
+        },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_cancelled_tender_without_cancellations(db, ut):
+    # tender_cancellations.length === 0
+    data = {
+        "status": "cancelled",
+        "awardPeriod": {
+            "startDate": '2016-11-17T13:32:25.774673+02:00',
+        },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_cancelled_tender_few_tenders_before_disclojure_date(db, ut):
+    # (max_date( tender_cancellations[0] ) < (new Date( bids_disclojure_date ))) == True
+    data = {
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod": {
+                    "startDate": "2016-11-13T15:15:00+02:00",
+                },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_cancelled_few_tenders_after_disclojure_date(db, ut):
+    # (max_date( tender_cancellations[0] ) < (new Date( bids_disclojure_date ))) == False
+    data = {
+        "status": "cancelled",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        'owner': 'teser',
+        "bids": test_bids_valid[0],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_tender_bids_UA(db, ut):
+    data = {
+        "status": "cancelled",
+        "procurementMethodType": "aboveThresholdUA",
+        "numberOfBids": 1,
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_tender_bids_EU(db, ut):
+    data = {
+        "status": "cancelled",
+        "procurementMethodType": "aboveThresholdEU",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(1, data, ut)
+
+
+def test_bids_view_check_tender_bids_UA_defense(db, ut):
+    data = {
+        "status": "cancelled",
+        "numberOfBids": 2,
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_tender_bids_UA_defense_0_bids(db, ut):
+    data = {
+        "status": "cancelled",
+        "numberOfBids": 0,
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_tender_bids_CD_EU(db, ut):
+    data = {
+        "status": "cancelled",
+        "procurementMethodType": "competitiveDialogueEU",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b2374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_tender_bids_CD_EU_two_qual(db, ut):
+    data = {
+        "status": "cancelled",
+        "procurementMethodType": "competitiveDialogueEU",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b2374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_tender_unsuccesfull(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "competitiveDialogueEU",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b2374b83ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b2374b83ddb886821c0582bc7e"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_tender_unsuccesfull_invalid(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "competitiveDialogueEU",
+        "cancellations":[{
+                        "cancellationOf": "tender",
+                        "date": "2016-11-13T15:17:00+02:00",
+                        "status": "active"
+                    }],
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b2374b83ddb886821c0582bc7e"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[3],
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_cancelled_lot(db, ut):
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_cancelled_lot_with_date(db, ut):
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "cancelled",
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_cancelled_related_lot(db, ut):
+    # ((cancellation.status === 'active') && (cancellation.cancellationOf === 'lot') && (cancellation.relatedLot === lot.id)) == True
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "cancellations":[{
+                    "status": "active",
+                    "cancelationOf": "lot",
+                    "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                }],
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_cancelled_lot_1_cancellation_fail(db, ut):
+    # (max_date(lot_cancellation[0]) < (new Date(bids_disclojure_date))) == True
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "cancellations":[{
+                        "cancellationOf": "lot",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "status": "active",
+                       "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    }],
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_cancelled_lot_1_cancellation(db, ut):
+    # (max_date(lot_cancellation[0]) < (new Date(bids_disclojure_date))) == False
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "cancellations":[{
+                        "cancellationOf": "lot",
+                        "date": "2016-12-13T15:10:00+02:00",
+                        "status": "active",
+                       "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    }],
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+
+def test_bids_view_check_cancelled_lot_2_cancellations_fail(db, ut):
+    # if (max_date(cancel) < (new Date(bids_disclojure_date))) == True
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": test_award_period,
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+         "cancellations":[{
+                        "cancellationOf": "lot",
+                        "status": "active",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    },{
+                        "cancellationOf": "lot",
+                        "status": "active",
+                        "date": "2016-11-13T15:10:00+02:00",
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    }],
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_cancelled_lot_2_cancellations(db, ut):
+    # if (max_date(cancel) < (new Date(bids_disclojure_date))) == False
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "cancellations":[{
+                        "cancellationOf": "lot",
+                        "status": "active",
+                        "date": "2016-11-13T15:20:00+02:00",
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    },{
+                        "cancellationOf": "lot",
+                        "status": "active",
+                        "date": "2016-11-13T15:20:00+02:00",
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                    }],
+        "lots": [
+            {
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",                
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_unsuccessfull(db, ut):
+    data = {
+        "procurementMethodType": "belowThreshold",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_unsuccessfull_fail(db, ut):
+    data = {
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_UA(db, ut):
+    data = {
+        "procurementMethodType": "aboveThresholdUA",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_UA_fail(db, ut):
+    data = {
+        "procurementMethodType": "aboveThresholdUA",
+        "qualifications": [{
+            "bidID": "f55962b1374b43ddb886821c0582bc7f"
+        },
+        {
+            "bidID": "f55962b1374b83ddb886821c0582bc7f"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_EU(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "aboveThresholdEU",
+        "qualifications": [{
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dk",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        },
+        {
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_EU_1_qual_fail(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "aboveThresholdEU",
+        "qualifications": [
+        {
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_UAdef(db, ut):
+    # (((count_lot_bids(lot, tender) < 2) && (lot_awards.length === 0))) == False
+    data = {
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_UA_def_fail(db, ut):
+    # (((count_lot_bids(lot, tender) < 2) && (lot_awards.length === 0))) == True
+    data = {
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_UA_def_with_award_and_1_bid(db, ut):
+    # (((count_lot_bids(lot, tender) < 2) && (lot_awards.length === 0))) == False
+    data = {
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "awards": [
+           {
+               "status": "active",
+               "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+               
+               "bid_id": "a22ef2b1374b43ddb886821c0582bc7dk",
+               "value": {
+                   "currency": "UAH",
+                   "amount": 2000,
+                   "valueAddedTaxIncluded": True
+               },
+               
+               "date": "2016-11-13T15:15:00+02:00",
+               "id": "da6b3f912070460ca082b969a2f91e5d"
+            }
+        ],
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "competitiveDialogueEU",
+        "qualifications": [{
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dk",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        },
+        {
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        },
+        {
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU_fail_with_2_qualifications(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "competitiveDialogueEU",
+        "qualifications": [{
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dk",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        },
+        {
+            "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
+            "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
+        }
+        ],
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "qualificationPeriod":{
+            "startDate": "2016-11-13T15:15:00+02:00"
+        },
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(0, data, ut)
+
+def test_bids_view_check_audit_documents(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "belowThreshold",        
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "documents":[   
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            }
+        ],
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+    ut.get_response()
+    ut.response = list(ut.response)
+    response = list(ut.response)
+    assert response[0]['value']['audits'] != None
+
+def test_bids_view_check_audit_2_documents_dateModified_check(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "belowThreshold",        
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "documents":[   
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "datePublished": "2016-06-01T12:17:40.193283+03:00",
+               "dateModified": "2016-06-01T12:26:40.193305+03:00",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            },
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "datePublished": "2016-06-01T12:18:40.193283+03:00",
+               "dateModified": "2016-06-01T12:19:40.193305+03:00",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            }
+        ],
+        "lots": [
+            {
+                "status": "unsuccessful",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+    ut.get_response()
+    ut.response = list(ut.response)
+    response = list(ut.response)
+    assert response[0]['value']['audits']['datePublished'] == "2016-06-01T12:18:40.193283+03:00"
+
+def test_bids_view_check_audit_2_documents_dateModified_check_without_lots(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "belowThreshold",        
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+            "endDate": "2016-12-30T15:15:00+02:00",
+        },
+        "documents":[   
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "datePublished": "2016-06-01T12:17:40.193283+03:00",
+               "dateModified": "2016-06-01T12:26:40.193305+03:00",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            },
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "datePublished": "2016-06-01T12:18:40.193283+03:00",
+               "dateModified": "2016-06-01T12:19:40.193305+03:00",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+
+    ut.get_response()
+    ut.response = list(ut.response)
+    response = list(ut.response)
+    assert response[0]['value']['audits']['datePublished'] == "2016-06-01T12:18:40.193283+03:00"
+    
+def test_bids_view_check_audit_1_document_dateModified_check_without_lots(db, ut):
+    data = {
+        "status": "unsuccessful",
+        "procurementMethodType": "belowThreshold",        
+        "awardPeriod": {
+            "startDate": "2016-11-13T15:15:00+02:00",
+        },
+        "documents":[   
+            {
+               "format": "text/plain",
+               "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
+               "documentOf": "tender",
+               "datePublished": "2016-06-01T12:18:40.193283+03:00",
+               "dateModified": "2016-06-01T12:19:40.193305+03:00",
+               "id": "412e55ba06e847749c24b774fc75b805"
+            }
+        ],
+        "bids": [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ],        
+        "owner": "teser"
+    }
+    assertLen(1, data, ut)
+    ut.get_response()
+    ut.response = list(ut.response)
+    response = list(ut.response)
+    assert response[0]['value']['audits'] != None
+
+#  end of new tests
 
 def test_bids_view_valid(db, ut):
     data = {
@@ -254,7 +1783,6 @@ def test_bids_utility_output_with_lots(db, ut):
             {
                 "date": "2016-04-07T16:36:58.983102+03:00",
                 "status": "active",
-
                 "owner": "test",
                 "id": "a22ef2b1374b43ddb886821c0582bc7dk",
                 "lotValues": [
@@ -274,4 +1802,3 @@ def test_bids_utility_output_with_lots(db, ut):
         ut.run()
         row = [["0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,,7.0"],]
         assert_csv(mock_csv, 'test/test@---bids.csv', ut.headers, row)
-        
