@@ -18,7 +18,7 @@ fi
 END="$(date  +'%Y-%m')-01"
 
 BROKERS="$ALL_BROKERS all"
-BROKERS_FILE_PATTERN="bids-invoices"
+BROKERS_FILE_PATTERN="bids-invoices-tenders-refunds"
 NOTIFY_FLAG=""
 NOTIFY_BROKERS=""
 
