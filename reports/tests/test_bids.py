@@ -114,7 +114,7 @@ def test_bids_view_invalid_method(db, ut):
     }
     assertLen(0, data, ut)
 
-#  start new bids tests
+#  start new bids_view tests
 
 def test_bids_view_invalid_doc_type(db, ut):
     data = {
@@ -1702,6 +1702,94 @@ def test_bids_view_period(db, ut):
     ut.end_date = "2016-12-01T15:00:00"
     ut.get_response()
     assert 2 == len(list(ut.response))
+
+def test_bids_view_period_edge_limit_check(db, ut):
+    ut.owner = 'test'
+    data = {
+        "_id": "10028cddd23540e5b6abb9efd2756de1",
+        "awardPeriod": {
+            "startDate": "2016-11-01T17:01:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[1],
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "10028cddd23540e3b6abb9efd2756de2",
+        "awardPeriod": {
+            "startDate": "2016-11-01T17:00:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[1],
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "10028cddd23540e3b60bb9efd2756de3",
+        "awardPeriod": {
+            "startDate": "2016-11-01T16:59:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[1],
+
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "10028cddd23520e3b6abb9efd2756de4",
+        "awardPeriod": {
+            "startDate": "2016-12-01T17:00:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[1],
+
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "10028cddd23540e3b50bb9efd2756de5",
+        "awardPeriod": {
+            "startDate": "2016-12-01T16:59:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[1],
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "00028aasd2isdfsde5b6abb9efd2756de6",
+        "awardPeriod": {
+            "startDate": "2016-12-01T17:01:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[2],
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+    data = {
+        "_id": "00028aasd2isdfsde5b6abb9efd2756de7",
+        "awardPeriod": {
+            "startDate": "2016-11-30T17:01:00+02:00",
+        },
+        'owner': 'teser',
+        'bids': test_bids_valid[2],
+    }
+    doc = copy(test_data)
+    doc.update(data)
+    ut.db.save(doc)
+
+    ut.start_date = "2016-11-01T15:00:00"
+    ut.end_date = "2016-12-01T15:00:00"
+    ut.get_response()
+    # id ends on e1,e2,e5,e7
+    assert 4 == len(list(ut.response))
 
 def test_bids_view_with_lots(db, ut):
     data = {
