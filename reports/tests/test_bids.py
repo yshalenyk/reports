@@ -167,9 +167,6 @@ def test_bids_view_have_no_disclojure_date(db, ut):
         "awardPeriod": {
             "startDate": "",
         },
-        "qualificationPeriod": {
-                    "startDate": "",
-                },
         'owner': 'teser',
         "bids": test_bids_valid[0],
     }
@@ -290,11 +287,8 @@ def test_bids_view_cancelled_tender_few_tenders_before_disclojure_date(db, ut):
                         "status": "active"
                     }],
         "awardPeriod": {
-            "startDate": test_award_period,
+            "startDate": "2016-12-13T15:10:00+02:00",
         },
-        "qualificationPeriod": {
-                    "startDate": "2016-11-13T15:15:00+02:00",
-                },
         'owner': 'teser',
         "bids": test_bids_valid[0],
     }
@@ -327,18 +321,8 @@ def test_bids_view_check_tender_bids_UA(db, ut):
                         "date": "2016-11-13T15:17:00+02:00",
                         "status": "active"
                     }],
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
             "startDate": test_award_period,
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
         },
         'owner': 'teser',
         'bids': test_bids_valid[3],
@@ -401,18 +385,8 @@ def test_bids_view_check_tender_bids_UA_defense_0_bids(db, ut):
                         "date": "2016-11-13T15:17:00+02:00",
                         "status": "active"
                     }],
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
             "startDate": test_award_period,
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
         },
         'owner': 'teser',
         'bids': test_bids_valid[3],
@@ -566,18 +540,8 @@ def test_bids_view_check_cancelled_lot(db, ut):
 def test_bids_view_check_cancelled_lot_with_date(db, ut):
     data = {
         "procurementMethodType": "belowThreshold",
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
             "startDate": test_award_period,
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
         },
         "lots": [
             {
@@ -654,18 +618,8 @@ def test_bids_view_check_cancelled_lot_1_cancellation_fail(db, ut):
     # (max_date(lot_cancellation[0]) < (new Date(bids_disclojure_date))) == True
     data = {
         "procurementMethodType": "belowThreshold",
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
-            "startDate": test_award_period,
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
+            "startDate": "2016-12-13T15:10:00+02:00",
         },
         "cancellations":[{
                         "cancellationOf": "lot",
@@ -749,18 +703,8 @@ def test_bids_view_check_cancelled_lot_2_cancellations_fail(db, ut):
     # if (max_date(cancel) < (new Date(bids_disclojure_date))) == True
     data = {
         "procurementMethodType": "belowThreshold",
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
-            "startDate": test_award_period,
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
+            "startDate": "2016-12-13T15:10:00+02:00",
         },
          "cancellations":[{
                         "cancellationOf": "lot",
@@ -888,18 +832,8 @@ def test_bids_view_check_unsuccessfull(db, ut):
 def test_bids_view_check_unsuccessfull_fail(db, ut):
     data = {
         "procurementMethodType": "aboveThresholdUA.defense",
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
         },
         "lots": [
             {
@@ -980,18 +914,8 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA(db, ut):
 def test_bids_view_check_lot_bids_unsuccessfull_UA_fail(db, ut):
     data = {
         "procurementMethodType": "aboveThresholdUA",
-        "qualifications": [{
-            "bidID": "f55962b1374b43ddb886821c0582bc7f"
-        },
-        {
-            "bidID": "f55962b1374b83ddb886821c0582bc7f"
-        }
-        ],
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
-        },
-        "qualificationPeriod":{
-            "startDate": "2016-11-13T15:15:00+02:00"
         },
         "lots": [
             {
