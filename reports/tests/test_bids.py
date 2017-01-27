@@ -36,7 +36,7 @@ test_bids_valid = [
         "date": "2016-04-17T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
-    [{  
+    [{
         "owner": "test",
         "status": "active",
         "date": "2016-05-05T13:32:25.774673+02:00",
@@ -61,6 +61,56 @@ test_bids_valid = [
         "id": "f55962b1374b83ddb886821c0582bc7f"
     }
     ]]
+
+test_lots = [{
+                "status": "cancelled",
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                "value": {
+                    "currency": "UAH",
+                    "amount": 2000,
+                    "valueAddedTaxIncluded": False,
+                },
+            }]
+
+test_bids = [{
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }]
+
+test_2_bids = [
+            {
+                "date": "2016-04-07T16:36:58.983102+03:00",
+                "owner": "test",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            },
+            {
+                "date": "2016-04-07T16:46:58.983102+03:00",
+                "owner": "te3st",
+                "status": "active",
+                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
+                "lotValues": [
+                    {
+                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
+                        "date": "2016-04-07T16:36:58.983062+03:00",
+                    }
+                ],
+            }
+        ]
 
 test_award_period = '2016-04-17T13:32:25.774673+02:00'
 
@@ -508,31 +558,8 @@ def test_bids_view_check_cancelled_lot(db, ut):
         "awardPeriod": {
             "startDate": test_award_period,
         },
-        "lots": [
-            {
-                "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                "value": {
-                    "currency": "UAH",
-                    "amount": 2000,
-                    "valueAddedTaxIncluded": False,
-                },
-            }
-        ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "lots": test_lots,
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -555,20 +582,7 @@ def test_bids_view_check_cancelled_lot_with_date(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -585,31 +599,8 @@ def test_bids_view_check_cancelled_related_lot(db, ut):
                     "cancelationOf": "lot",
                     "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
                 }],
-        "lots": [
-            {
-                "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                "value": {
-                    "currency": "UAH",
-                    "amount": 2000,
-                    "valueAddedTaxIncluded": False,
-                },
-            }
-        ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "lots": test_lots,
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -627,31 +618,8 @@ def test_bids_view_check_cancelled_lot_1_cancellation_fail(db, ut):
                         "status": "active",
                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
                     }],
-        "lots": [
-            {
-                "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                "value": {
-                    "currency": "UAH",
-                    "amount": 2000,
-                    "valueAddedTaxIncluded": False,
-                },
-            }
-        ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "lots": test_lots,
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -669,31 +637,8 @@ def test_bids_view_check_cancelled_lot_1_cancellation(db, ut):
                         "status": "active",
                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
                     }],
-        "lots": [
-            {
-                "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                "value": {
-                    "currency": "UAH",
-                    "amount": 2000,
-                    "valueAddedTaxIncluded": False,
-                },
-            }
-        ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "lots": test_lots,
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -717,31 +662,8 @@ def test_bids_view_check_cancelled_lot_2_cancellations_fail(db, ut):
                         "date": "2016-11-13T15:10:00+02:00",
                         "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
                     }],
-        "lots": [
-            {
-                "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                "value": {
-                    "currency": "UAH",
-                    "amount": 2000,
-                    "valueAddedTaxIncluded": False,
-                },
-            }
-        ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "lots": test_lots,
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -767,7 +689,7 @@ def test_bids_view_check_cancelled_lot_2_cancellations(db, ut):
         "lots": [
             {
                 "status": "cancelled",
-                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",                
+                "id": "324d7b2dd7a54df29bad6d0b7c91b2e9",
                 "value": {
                     "currency": "UAH",
                     "amount": 2000,
@@ -775,21 +697,7 @@ def test_bids_view_check_cancelled_lot_2_cancellations(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
-        
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -811,20 +719,7 @@ def test_bids_view_check_unsuccessfull(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -846,20 +741,7 @@ def test_bids_view_check_unsuccessfull_fail(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -881,32 +763,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -928,20 +785,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA_fail(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -976,32 +820,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_EU(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1033,32 +852,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_EU_1_qual_fail(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -1081,32 +875,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_UAdef(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1129,20 +898,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA_def_fail(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -1158,14 +914,12 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA_def_with_award_and_1_bid(db, 
            {
                "status": "active",
                "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-               
                "bid_id": "a22ef2b1374b43ddb886821c0582bc7dk",
                "value": {
                    "currency": "UAH",
                    "amount": 2000,
                    "valueAddedTaxIncluded": True
                },
-               
                "date": "2016-11-13T15:15:00+02:00",
                "id": "da6b3f912070460ca082b969a2f91e5d"
             }
@@ -1181,20 +935,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_UA_def_with_award_and_1_bid(db, 
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1206,16 +947,15 @@ def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU(db, ut):
         "qualifications": [{
             "bidID": "a22ef2b1374b43ddb886821c0582bc7dk",
             "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
-        },
-        {
+            },
+            {
             "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
             "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
-        },
-        {
+            },
+            {
             "bidID": "a22ef2b1374b43ddb886821c0582bc7dj",
             "lotID": "324d7b2dd7a54df29bad6d0b7c91b2e9"
-        }
-        ],
+        }],
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
         },
@@ -1233,32 +973,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1293,32 +1008,7 @@ def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU_fail_with_
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(0, data, ut)
@@ -1326,11 +1016,11 @@ def test_bids_view_check_lot_bids_unsuccessfull_competitiveDialogueEU_fail_with_
 def test_bids_view_check_audit_documents(db, ut):
     data = {
         "status": "unsuccessful",
-        "procurementMethodType": "belowThreshold",        
+        "procurementMethodType": "belowThreshold",
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
         },
-        "documents":[   
+        "documents":[
             {
                "format": "text/plain",
                "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
@@ -1349,32 +1039,7 @@ def test_bids_view_check_audit_documents(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1386,11 +1051,11 @@ def test_bids_view_check_audit_documents(db, ut):
 def test_bids_view_check_audit_2_documents_dateModified_check(db, ut):
     data = {
         "status": "unsuccessful",
-        "procurementMethodType": "belowThreshold",        
+        "procurementMethodType": "belowThreshold",
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
         },
-        "documents":[   
+        "documents":[
             {
                "format": "text/plain",
                "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
@@ -1419,32 +1084,7 @@ def test_bids_view_check_audit_2_documents_dateModified_check(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1456,7 +1096,7 @@ def test_bids_view_check_audit_2_documents_dateModified_check(db, ut):
 def test_bids_view_check_audit_2_documents_dateModified_check_without_lots(db, ut):
     data = {
         "status": "unsuccessful",
-        "procurementMethodType": "belowThreshold",        
+        "procurementMethodType": "belowThreshold",
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
             "endDate": "2016-12-30T15:15:00+02:00",
@@ -1479,32 +1119,7 @@ def test_bids_view_check_audit_2_documents_dateModified_check_without_lots(db, u
                "id": "412e55ba06e847749c24b774fc75b805"
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            },
-            {
-                "date": "2016-04-07T16:46:58.983102+03:00",
-                "owner": "te3st",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dj",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_2_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1517,11 +1132,11 @@ def test_bids_view_check_audit_2_documents_dateModified_check_without_lots(db, u
 def test_bids_view_check_audit_1_document_dateModified_check_without_lots(db, ut):
     data = {
         "status": "unsuccessful",
-        "procurementMethodType": "belowThreshold",        
+        "procurementMethodType": "belowThreshold",
         "awardPeriod": {
             "startDate": "2016-11-13T15:15:00+02:00",
         },
-        "documents":[   
+        "documents":[
             {
                "format": "text/plain",
                "title": "audit_0006651836f34bcda9a030c0bf3c0e6e_324d7b2dd7a54df29bad6d0b7c91b2e9.yaml",
@@ -1531,20 +1146,7 @@ def test_bids_view_check_audit_1_document_dateModified_check_without_lots(db, ut
                "id": "412e55ba06e847749c24b774fc75b805"
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],        
+        "bids": test_bids,
         "owner": "teser"
     }
     assertLen(1, data, ut)
@@ -1735,20 +1337,7 @@ def test_bids_view_with_lots(db, ut):
                 },
             }
         ],
-        "bids": [
-            {
-                "date": "2016-04-07T16:36:58.983102+03:00",
-                "owner": "test",
-                "status": "active",
-                "id": "a22ef2b1374b43ddb886821c0582bc7dk",
-                "lotValues": [
-                    {
-                        "relatedLot": "324d7b2dd7a54df29bad6d0b7c91b2e9",
-                        "date": "2016-04-07T16:36:58.983062+03:00",
-                    }
-                ],
-            }
-        ],
+        "bids": test_bids,
     }
     assertLen(1, data, ut)
 
@@ -1760,16 +1349,14 @@ def test_bids_utility_output(db, ut):
             "startDate": '2016-04-17T13:32:25.774673+02:00',
         }
     }
-    
     mock_csv = mock.mock_open()
     doc = copy(test_data)
     doc.update(data)
     ut.db.save(doc)
-    with mock.patch('__builtin__.open', mock_csv):    
+    with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         row = [['0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,,1000,UAH,44931d9653034837baff087cfc2fb5ac,,7.0'],]
         assert_csv(mock_csv, 'test/test@---bids.csv', ut.headers, row)
-        
 
 def test_bids_utility_output_with_lots(db, ut):
     data = {
@@ -1809,7 +1396,7 @@ def test_bids_utility_output_with_lots(db, ut):
     mock_csv = mock.mock_open()
     doc = copy(test_data)
     doc.update(data)
-    ut.db.save(doc)       
+    ut.db.save(doc)
     with mock.patch('__builtin__.open', mock_csv):
         ut.run()
         row = [["0006651836f34bcda9a030c0bf3c0e6e,UA-2016-11-12-000150,324d7b2dd7a54df29bad6d0b7c91b2e9,2000,UAH,a22ef2b1374b43ddb886821c0582bc7dk,,7.0"],]
