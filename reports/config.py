@@ -34,12 +34,16 @@ class Config(object):
         t = self.config.get('payments', 'thresholds')
         return [float(i.strip()) for i in t.split(',')]
 
-    @property
-    def payments(self):
+    def payments(self, before_2017=False):
         if self.rev:
+            key = 'emall_{}'
             p = self.config.get('payments', "emall")
         else:
-            p = self.config.get('payments', "cdb")
+            key = 'cdb_{}'
+        key = key.format('2016') if before_2017 else \
+                    key.format('2017')
+
+        p = self.config.get('payments', key)
         return [float(i.strip()) for i in p.split(',')]
 
     @property

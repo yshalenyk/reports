@@ -15,6 +15,12 @@ class BidsUtility(BaseBidsUtility):
     def row(self, record):
         bid = record.get(u'bid', '')
         rate = None
+        use_audit = True
+        self.get_initial_bids(record.get('audits', ''),
+                              record.get('tender', ''))
+
+        if not self.initial_bids:
+            use_audit = False
         if record.get('startdate', '') < "2016-04-01" and \
                 not self.bid_date_valid(bid, record.get(u'audits', '')):
             return
@@ -33,7 +39,17 @@ class BidsUtility(BaseBidsUtility):
             self.Logger.info(msg)
         r = str(rate) if rate else ''
         row.append(r)
-        row.append(self.get_payment(value))
+        if use_audit:
+            initial_bid_date = [b for b in self.initial_bids
+                                if b['bidder'] == bid][0]['date']
+        else:
+            self.Logger.fatal('Unable to load initial bids'
+                              ' for tender id={} for audits.'
+                              'Use initial bid date from revisions'.format(record.get('tender')))
+            initial_bid_date = record.get('initialDate', '')
+            self.Logger.info('Initial date from revisions {}'.format(initial_bid_date))
+        threshold_date = '2017-01-02T00:00+02:00'
+        row.append(self.get_payment(value, initial_bid_date < threshold_date))
         self.Logger.info(
             "Bill {} for tender {} with value {}".format(
                 row[-1], row[0], value

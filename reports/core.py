@@ -38,6 +38,7 @@ class BaseUtility(object):
         self.start_date = ''
         self.end_date = ''
         self.timezone = tz
+        self.payments = []
 
         if period:
             if len(period) == 1:
@@ -79,11 +80,12 @@ class BaseUtility(object):
         res = date.to('UTC').strftime("%Y-%m-%dT%H:%M:%S.%f")
         return res
 
-    def get_payment(self, value):
+    def get_payment(self, value, before_2017=False):
+        self.payments = self.config.payments(before_2017)
         for index, threshold in enumerate(self.config.thresholds):
             if value <= threshold:
-                return self.config.payments[index]
-        return self.config.payments[-1]
+                return self.payments[index]
+        return self.payments[-1]
 
     def _sync_views(self):
         ViewDefinition.sync_many(self.adb, views)
@@ -153,6 +155,8 @@ class BaseBidsUtility(BaseUtility):
         super(BaseBidsUtility, self).__init__(operation)
         self.view = 'report/bids_owner_date'
         self.skip_bids = set()
+        self.initial_bids = []
+        self.initial_bids_for = ''
         parser = get_cmd_parser()
         args = parser.parse_args()
         self._initialize(
@@ -162,32 +166,36 @@ class BaseBidsUtility(BaseUtility):
             args.timezone
         )
 
+    def get_initial_bids(self, audit, tender_id):
+        url = audit is not None and audit.get('url')
+        if not url:
+            self.Logger.fatal('Invalid audit for tender id={}'.format(tender_id))
+            self.initial_bids = []
+            return
+        if not url.startswith('https'):
+            url = self.config.api_url + url
+        try:
+            yfile = yaml.load( requests.get(url).text)
+            self.initial_bids = yfile['timeline']['auction_start']['initial_bids']
+            self.initial_bids_for = yfile.get('tender_id', yfile.get('id', ''))
+            return self.initial_bids
+        except (ScannerError, KeyError, TypeError) as e:
+            msg = 'Falied to scan audit file'\
+                    ' for tender id={}. Error {}'.format(tender_id, e)
+            self.Logger.error(msg)
+        except RequestException as e:
+            msg = "Request falied at getting audit file"\
+                    "for tender id={0}  with error '{1}'".format(tender_id, e)
+            self.Logger.info(msg)
+        self.initial_bids = []
+
     def bid_date_valid(self, bid_id, audit):
         if bid_id in self.skip_bids or not audit:
             self.Logger.info('Skipped cached early bid: %s', bid_id)
             return False
-        try:
-            yfile = yaml.load(
-                requests.get(self.config.api_url + audit['url']).text
-            )
-            initial_bids = yfile['timeline']['auction_start']['initial_bids']
-            for bid in initial_bids:
-                if bid['date'] < "2016-04-01":
-                    self.skip_bids.add(bid['bidder'])
-        except RequestException as e:
-            msg = "Request falied at getting audit file"\
-                "of {0}  bid with {1}".format(bid_id, e)
-            self.Logger.info(msg)
-        except ScannerError:
-            msg = 'falied to scan audit file of {} bid'.format(bid_id)
-            self.Logger.error(msg)
-        except KeyError:
-            msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.Logger.info(msg)
-        except TypeError:
-            msg = 'falied to parse audit file of {} bid'.format(bid_id)
-            self.Logger.info(msg)
-
+        for bid in self.initial_bids:
+            if bid['date'] < "2016-04-01":
+                self.skip_bids.add(bid['bidder'])
         if bid_id in self.skip_bids:
             self.Logger.info('Skipped fetched early bid: %s', bid_id)
             return False
