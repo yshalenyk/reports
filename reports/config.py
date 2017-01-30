@@ -37,7 +37,6 @@ class Config(object):
     def payments(self, before_2017=False):
         if self.rev:
             key = 'emall_{}'
-            p = self.config.get('payments', "emall")
         else:
             key = 'cdb_{}'
         key = key.format('2016') if before_2017 else \

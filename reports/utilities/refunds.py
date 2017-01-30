@@ -10,7 +10,7 @@ class RefundsUtility(BaseTendersUtility):
     def __init__(self):
         super(RefundsUtility, self).__init__('refunds')
         self.headers = thresholds_headers(self.config.thresholds)
-        self.counter = [0 for _ in self.config.payments]
+        self.counter = [0 for _ in xrange(0, 5)]
 
     def row(self, record):
         tender = record.get('tender', '')
@@ -49,10 +49,10 @@ class RefundsUtility(BaseTendersUtility):
                     record[u'startdate'], value, record['tender']
                 )
             self.Logger.info(msg)
-        payment = self.get_payment(value)
-        for i, x in enumerate(self.config.payments):
+        payment = self.get_payment(value, record.get('startdate', '') < self.threshold_date)
+        for i, x in enumerate(self.payments):
             if payment == x:
-                msg = 'Bill {} for value {} in tender {}'.format(
+                msg = 'Refund {} for value {} in tender {}'.format(
                     payment, value, record['tender']
                 )
                 self.Logger.info(msg)

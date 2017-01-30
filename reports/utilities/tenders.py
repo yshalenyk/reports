@@ -52,9 +52,9 @@ class TendersUtility(BaseTendersUtility):
             self.Logger.info(msg)
         r = str(rate) if rate else ''
         row.append(r)
-        row.append(self.get_payment(value))
+        row.append(self.get_payment(value, record.get('startdate', '') < self.threshold_date))
         self.Logger.info(
-            "Bill {} for tender {} with value {}".format(
+            "Refund {} for tender {} with value {}".format(
                 row[-1], row[0], value
             )
         )

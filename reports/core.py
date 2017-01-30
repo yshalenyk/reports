@@ -31,6 +31,7 @@ class BaseUtility(object):
         self.rev = rev
         self.headers = None
         self.operation = operation
+        self.threshold_date = '2017-01-02T00:00+02:00'
 
     def _initialize(self, broker, period, config, tz=''):
         self.broker = broker

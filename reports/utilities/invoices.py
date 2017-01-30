@@ -49,8 +49,7 @@ class InvoicesUtility(BaseBidsUtility):
             initial_bid_date = record.get('initialDate', '')
             self.Logger.info('Initial date from revisions {}'.format(initial_bid_date))
 
-        threshold_date = '2017-01-02T00:00+02:00'
-        payment = self.get_payment(value, initial_bid_date < threshold_date)
+        payment = self.get_payment(value, initial_bid_date < self.threshold_date)
         for i, x in enumerate(self.payments):
             if payment == x:
                 msg = 'Computated bill {} for value {} '\
