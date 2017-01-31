@@ -59,7 +59,8 @@ class BaseUtility(object):
         db_name = self.config.get_option('db', 'name')
 
         self.db = couchdb.Database(
-            create_db_url(host, port, user_name, user_password, db_name)
+            create_db_url(host, port, user_name, user_password, db_name),
+            session=couchdb.Session(retry_delays=range(10))
         )
 
         a_name = self.config.get_option('admin', 'username')
