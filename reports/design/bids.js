@@ -22,10 +22,10 @@ function(doc) {
     function find_initial_bid_date(revisions, bid_index, bid_id) {
       var revs = find_matched_revs(revisions, '/bids/' + bid_index);
       if (revs.length !== 0){
-        return revs[0]['date'];
+        return revs[0]['date'] || '';
       } else {
         var revs = find_matched_revs(revisions, '/bids');
-        return revs[0]['date'];
+        return revs[0]['date'] || '';
       }
     }
 
@@ -316,7 +316,7 @@ function(doc) {
                 initialDate: init_date
             });
         },
-        tender: function(owner, date, bid, tender, audits){
+        tender: function(owner, date, bid, tender, audits, init_date){
             emit([owner, date, bid.id], {
                 tender: id,
                 value: tender.value.amount,
@@ -337,7 +337,7 @@ function(doc) {
         if ("bids" in tender) {
             if(is_multilot) {
                 (bids || []).forEach(function(bid) {
-                    var init_date = find_initial_bid_date(tender.revisions, tender.bids.indexOf(bid), bid.id);
+                    var init_date = find_initial_bid_date(tender.revisions || [], tender.bids.indexOf(bid), bid.id);
                     bid.lotValues.forEach(function(value) {
                         tender.lots.forEach(function(lot) {
                             if (check_lot(tender, lot)) {
