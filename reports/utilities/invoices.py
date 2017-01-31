@@ -40,8 +40,13 @@ class InvoicesUtility(BaseBidsUtility):
             self.Logger.info(msg)
 
         if use_audit:
-            initial_bid_date = [b for b in self.initial_bids
-                                if b['bidder'] == bid][0]['date']
+            initial_bid = [b for b in self.initial_bids
+                           if b['bidder'] == bid]
+            if not initial_bid:
+                initial_bid_date = record.get('initialDate', '')
+            else:
+                initial_bid_date = initial_bid[0]['date']
+
         else:
             self.Logger.fatal('Unable to load initial bids'
                               ' for tender id={} for audits.'
