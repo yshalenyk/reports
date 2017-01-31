@@ -190,10 +190,7 @@ class BaseBidsUtility(BaseUtility):
             self.Logger.info(msg)
         self.initial_bids = []
 
-    def bid_date_valid(self, bid_id, audit):
-        if bid_id in self.skip_bids or not audit:
-            self.Logger.info('Skipped cached early bid: %s', bid_id)
-            return False
+    def bid_date_valid(self, bid_id):
         for bid in self.initial_bids:
             if bid['date'] < "2016-04-01":
                 self.skip_bids.add(bid['bidder'])

@@ -25,7 +25,7 @@ class InvoicesUtility(BaseBidsUtility):
             use_audit = False
 
         if record.get('startdate', '') < "2016-04-01" and \
-                not self.bid_date_valid(bid, record.get(u'audits', '')):
+                not self.bid_date_valid(bid):
             return
         if record[u'currency'] != u'UAH':
             old = value

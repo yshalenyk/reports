@@ -22,7 +22,7 @@ class BidsUtility(BaseBidsUtility):
         if not self.initial_bids:
             use_audit = False
         if record.get('startdate', '') < "2016-04-01" and \
-                not self.bid_date_valid(bid, record.get(u'audits', '')):
+                not self.bid_date_valid(bid):
             return
         row = list(record.get(col, '') for col in self.headers[:-2])
         value = float(record.get(u'value', 0))
