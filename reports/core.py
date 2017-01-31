@@ -174,10 +174,8 @@ class BaseBidsUtility(BaseUtility):
             self.Logger.fatal('Invalid audit for tender id={}'.format(tender_id))
             self.initial_bids = []
             return
-        if not url.startswith('https'):
-            url = self.config.api_url + url
         try:
-            yfile = yaml.load( requests.get(url).text)
+            yfile = yaml.load(requests.get(url).text)
             self.initial_bids = yfile['timeline']['auction_start']['initial_bids']
             self.initial_bids_for = yfile.get('tender_id', yfile.get('id', ''))
             return self.initial_bids

@@ -21,12 +21,14 @@ function(doc) {
 
     function find_initial_bid_date(revisions, bid_index, bid_id) {
       var revs = find_matched_revs(revisions, '/bids/' + bid_index);
-      if (revs.length !== 0){
-        return revs[0]['date'] || '';
-      } else {
-        var revs = find_matched_revs(revisions, '/bids');
-        return revs[0]['date'] || '';
+      if (typeof revs === 'undefined' || revs.length === 0) {
+          var revs = find_matched_revs(revisions, '/bids');
       }
+
+      if (typeof revs === 'undefined' || revs.length === 0) {
+        return '';
+      }
+      return revs[0]['date'] || '';
     }
 
     function filter_bids(bids) {
@@ -343,7 +345,7 @@ function(doc) {
                             if (check_lot(tender, lot)) {
                                 if (value.relatedLot === lot.id) {
                                     var audits = (tender.documents || []).filter(function(tender_doc) {
-                                        return tender_doc.title.indexOf("audit_" + id + "_" + lot.id) === 0;
+                                        return tender_doc.title.indexOf("audit_" + tender.id + "_" + lot.id) !== -1;
                                     });
                                     var audit = '';
                                     if (audits.length > 1) {
