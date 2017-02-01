@@ -53,7 +53,7 @@ class BidsUtility(BaseBidsUtility):
                               'Use initial bid date from revisions'.format(record.get('tender')))
             initial_bid_date = record.get('initialDate', '')
             self.Logger.info('Initial date from revisions {}'.format(initial_bid_date))
-        row.append(self.get_payment(value, initial_bid_date < self.threshold_date))
+        row.append(self.get_payment(value, initial_bid_date > self.threshold_date))
         self.Logger.info(
             "Bill {} for tender {} with value {}".format(
                 row[-1], row[0], value

@@ -31,7 +31,7 @@ class BaseUtility(object):
         self.rev = rev
         self.headers = None
         self.operation = operation
-        self.threshold_date = '2017-01-02T00:00+02:00'
+        self.threshold_date = '2017-01-01T00:00+02:00'
 
     def _initialize(self, broker, period, config, tz=''):
         self.broker = broker
@@ -49,6 +49,8 @@ class BaseUtility(object):
                 self.end_date = self.convert_date(period[1])
         self.get_db_connection()
         self.Logger = getLogger(self.operation)
+        self.payments = self.config.payments(True)
+        self.payments_before = self.config.payments(False)
 
     def get_db_connection(self):
         host = self.config.get_option('db', 'host')
@@ -83,11 +85,11 @@ class BaseUtility(object):
         return res
 
     def get_payment(self, value, before_2017=False):
-        self.payments = self.config.payments(before_2017)
+        p = self.payments_before if before_2017 else self.payments
         for index, threshold in enumerate(self.config.thresholds):
             if value <= threshold:
-                return self.payments[index]
-        return self.payments[-1]
+                return p[index]
+        return p[-1]
 
     def _sync_views(self):
         ViewDefinition.sync_many(self.adb, views)
