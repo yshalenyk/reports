@@ -10,13 +10,15 @@ class RefundsUtility(BaseTendersUtility):
     def __init__(self):
         super(RefundsUtility, self).__init__('refunds')
         self.headers = thresholds_headers(self.config.thresholds)
-        self.counter = [0 for _ in xrange(0, 5)]
+        self.counter = [0 for _ in range(0, 5)]
+        self.counter_before = [0 for _ in range(0, 5)]
 
     def row(self, record):
         tender = record.get('tender', '')
         lot = record.get('lot', '')
         status = record.get('status', '')
         lot_status = record.get('lot_status', '')
+        initial_date = record.get('startdate', '')
 
         if lot:
             if ','.join([tender, lot]) in self.ignore:
@@ -49,23 +51,34 @@ class RefundsUtility(BaseTendersUtility):
                     record[u'startdate'], value, record['tender']
                 )
             self.Logger.info(msg)
-        payment = self.get_payment(value, record.get('startdate', '') < self.threshold_date)
-        for i, x in enumerate(self.payments):
+
+        before = initial_date > self.threshold_date
+        payment = self.get_payment(value, before)
+        p = self.payments
+        c = self.counter
+        if before:
+            p = self.payments_before
+            c = self.counter_before
+        for i, x in enumerate(p):
             if payment == x:
-                msg = 'Refund {} for value {} in tender {}'.format(
-                    payment, value, record['tender']
-                )
+                msg = 'Computated bill {} for value {} '\
+                      'in {} tender'.format(payment, value, record['tender'])
                 self.Logger.info(msg)
-                self.counter[i] += 1
+                c[i] += 1
 
     def rows(self):
         for resp in self.response:
             self.row(resp['value'])
-        self._rows = [self.counter, self.payments]
-        self._rows.append(
-            [c * v for c, v in zip(self.counter, self.payments)]
-        )
-        for row in self._rows:
+
+        for row in [
+            self.payments,
+            self.counter,
+            [c * v for c, v in zip(self.counter, self.payments)],
+            ['' for _ in range(5)],
+            self.payments_before,
+            self.counter_before,
+            [c * v for c, v in zip(self.counter_before, self.payments_before)],
+        ]:
             yield row
 
 

@@ -13,7 +13,8 @@ class InvoicesUtility(BaseBidsUtility):
             self.config.thresholds
         )
 
-        self.counter = [0 for _ in xrange(0, 5)]
+        self.counter = [0 for _ in range(0, 5)]
+        self.counter_before = [0 for _ in range(0, 5)]
 
     def row(self, record):
         value = float(record.get("value", 0))
@@ -53,23 +54,34 @@ class InvoicesUtility(BaseBidsUtility):
                               'Use initial bid date from revisions'.format(record.get('tender')))
             initial_bid_date = record.get('initialDate', '')
             self.Logger.info('Initial date from revisions {}'.format(initial_bid_date))
-
-        payment = self.get_payment(value, initial_bid_date < self.threshold_date)
-        for i, x in enumerate(self.payments):
+        
+        before = initial_bid_date > self.threshold_date
+        payment = self.get_payment(value, before)
+        p = self.payments
+        c = self.counter
+        if before:
+            p = self.payments_before
+            c = self.counter_before
+        for i, x in enumerate(p):
             if payment == x:
                 msg = 'Computated bill {} for value {} '\
                       'in {} tender'.format(payment, value, record['tender'])
                 self.Logger.info(msg)
-                self.counter[i] += 1
+                c[i] += 1
 
     def rows(self):
-        self._rows = [self.counter, self.payments]
         for resp in self.response:
             self.row(resp['value'])
-        self._rows.append(
-            [c * v for c, v in zip(self.counter, self.payments)]
-        )
-        for row in self._rows:
+
+        for row in [
+            self.counter,
+            self.payments,
+            [c * v for c, v in zip(self.counter, self.payments)],
+            ['' for _ in range(5)],
+            self.counter_before,
+            self.payments_before,
+            [c * v for c, v in zip(self.counter_before, self.payments_before)],
+        ]:
             yield row
 
 
