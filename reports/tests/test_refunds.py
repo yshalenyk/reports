@@ -16,6 +16,7 @@ test_bids = [
                     {
                         "date": "2016-04-07T16:36:58.983102+03:00",
                         "owner": "test",
+                        "status": "active",
                         "id": "a22ef2b1374b43ddb886821c0582bc7dk",
                         "lotValues": [
                             {

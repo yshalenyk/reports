@@ -11,11 +11,11 @@ test_data = {
     "procurementMethod": "open",
     "status": "complete",
     "owner": "test",
+    "doc_type": "Tender",
     'tender': '0006651836f34bcda9a030c0bf3c0e6e',
     "_id": "0006651836f34bcda9a030c0bf3c0e6e",
     "tenderID": "UA-2016-11-12-000150",
     "dateModified": "2016-04-31T19:03:53.704712+03:00",
-    "date": "2016-04-31T19:03:53.704712+03:00",
     "tenderPeriod": {
         "startDate": "2016-11-13T15:15:00+02:00",
     },
@@ -26,12 +26,6 @@ test_data = {
         "status": "",
         "id": "1ac8c648538d4930918b0b0a1e884ef2",
         "awardID": "3d5182c5a0424a4f8508da712affa82f"
-    }],
-    "awards": [{
-        "status": "",
-        "bid_id": "44931d9653034837baff087cfc2fb5ac",
-        "date": "2016-11-17T13:32:25.774673+02:00",
-        "id": "3d5182c5a0424a4f8508da712affa82f"
     }],
     "bids": [{
         "owner": "test",

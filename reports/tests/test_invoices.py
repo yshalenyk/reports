@@ -15,17 +15,20 @@ from reports.tests.utils import(
 test_bids_valid = [
     [{
         "owner": "test",
+        "status": "active",
         "date": "2016-04-17T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
     [{
         "owner": "test",
+        "status": "active",
         "date": "2016-05-05T13:32:25.774673+02:00",
         "id": "44931d9653034837baff087cfc2fb5ac",
     }],
 
     [{
         "owner": "test",
+        "status": "active",
         "date": "2016-05-10T13:32:25.774673+02:00",
         "id": "f55962b1374b43ddb886821c0582bc7f"
     }]]
