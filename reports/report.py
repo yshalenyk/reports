@@ -7,6 +7,13 @@ from datetime import date
 from datetime import datetime
 from logging import getLogger
 from logging.config import dictConfig
+from reports.modules.bids import headers as bids_headers
+from reports.modules.tenders import headers as tenders_headers
+
+from reports.helpers import generation_period, convert_date
+from reports.config import Config
+from reports.vault import Vault
+
 from reports.modules import (
     Bids,
     Invoices,
@@ -15,25 +22,6 @@ from reports.modules import (
     AWSClient
 )
 
-from reports.modules.bids import (
-    headers as bids_headers
-)
-from reports.modules.tenders import (
-    headers as tenders_headers
-)
-
-from reports.helpers import (
-    generation_period,
-    convert_date
-)
-
-from reports.config import (
-    Config
-)
-
-from reports.vault import (
-    Vault
-)
 
 ARGS = [
     'config',
@@ -45,9 +33,8 @@ ARGS = [
     'timestamp',
     'include',
     'timezone',
-    'include_cancelled'
 ]
-logger = getLogger()
+logger = getLogger(__name__)
 
 
 class ReportConfig(object):
@@ -83,9 +70,10 @@ class ReportConfig(object):
 
     def produce_module_config(self, broker):
         config = Config(self.config)
-        for param in ['period', 'timezone', 'include_cancelled']:
+        for param in ['period', 'timezone']:
             setattr(config, param, getattr(self, param))
         config.broker = broker
+        config.include_cancelled = self.include_cancelled
         config.period = [convert_date(self.start_date, from_tz='UTC', to_tz='Europe/Kiev'),
                          convert_date(self.end_date, from_tz='UTC', to_tz='Europe/Kiev')]
         return config
@@ -95,12 +83,9 @@ class ReportConfig(object):
         if len(self.period) == 0:
             today = date.today().replace(day=1)
             if today.month == 1:
-                return today.replace(year=today.year-1,
-                                     month=12,
-                                     day=1).strftime('%Y-%m-%d')
+                return today.replace(year=today.year-1, month=12, day=1).strftime('%Y-%m-%d')
             else:
-                return today.replace(month=today.month-1,
-                                     day=1).strftime('%Y-%m-%d')
+                return today.replace(month=today.month-1, day=1).strftime('%Y-%m-%d')
         return self.period[0].split('T')[0]
 
     @property
@@ -272,7 +257,8 @@ class Report(object):
             self.create_all_bids_archive()
             self.upload_files()
             self.clean_up()
-        self.aws.send_emails()
+        if self.config.notify:
+            self.aws.send_emails()
 
 
 def run():
@@ -281,6 +267,7 @@ def run():
     parser.add_argument('--type', nargs='+', default=['all'])
     parser.add_argument('--period', nargs='+', default=[])
     parser.add_argument('--notify', action='store_true', default=False)
+    parser.add_argument('--include-cancelled', action='store_true', default=False)
     parser.add_argument('--notify-brokers', nargs='+')
     parser.add_argument('--brokers', nargs='+')
     parser.add_argument('--timestamp')
