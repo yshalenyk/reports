@@ -11,9 +11,7 @@ from reports.design import (
     bids_owner_date,
     tenders_owner_date
 )
-from reports.helpers import (
-    value_currency_normalize
-)
+from reports.helpers import value_currency_normalize
 
 views = [bids_owner_date, tenders_owner_date]
 logger = logging.getLogger(__name__)
@@ -46,6 +44,7 @@ class BaseUtility(object):
                 return self.config.payments[index]
         return self.config.payments[-1]
 
+<<<<<<< HEAD
     @property
     def response(self):
         date = self.config.end_date()
