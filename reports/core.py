@@ -44,7 +44,6 @@ class BaseUtility(object):
                 return self.config.payments[index]
         return self.config.payments[-1]
 
-<<<<<<< HEAD
     @property
     def response(self):
         date = self.config.end_date()
@@ -123,3 +122,52 @@ class CSVMixin(object):
             writer.writerow(self.headers)
             for row in self.rows:
                 writer.writerow(row)
+
+
+class BaseBidsUtility(BaseUtility):
+
+    view = 'report/bids_owner_date'
+
+
+class BaseTendersUtility(BaseUtility):
+
+    view = 'report/tenders_owner_date'
+
+
+class RowMixin(object):
+
+    def rows(self, response):
+        for resp in response:
+            row = self.row(resp["value"])
+            if row:
+                yield row
+
+
+class RowInvoiceMixin(object):
+
+    def rows(self):
+        for resp in self.response:
+            self.row(resp['value'])
+        for row in [
+            self.payments,
+            self.counter,
+            [c * v for c, v in zip(self.counter, self.config.payments)]
+        ]:
+            yield row
+
+
+class HeadersToRowMixin(object):
+
+    def record(self, row):
+        record = {header: row.get(header, '') for header in self.headers}
+        if str(record['currency']) != 'UAH':
+            value = record['value']
+            record['value'], record['rate'] = value_currency_normalize(
+                float(record['value']),
+                record['currency'],
+                record['startdate']
+            )
+            logger.info('Changed value {} -> {} by exchange rate'
+                        ' {} ({})'.format(value, record['value'],
+                                          record['rate'], record['startdate']))
+        return [str(v) for v in record.values()]
