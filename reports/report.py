@@ -64,9 +64,6 @@ class ReportConfig(object):
         self.verified_email = email.get('verified_email')
         self.zip = self.config.get('zip_path')
         self.vault = self.config.get('vault')
-        logger.info('Starting generatin {}--{}.'.format(self.start_date, self.end_date))
-        logger.info('Brokers {}'.format(self.brokers))
-        logger.info('Types: {}'.format(self.modules))
 
     def produce_module_config(self, broker):
         config = Config(self.config)
@@ -132,12 +129,22 @@ class Report(object):
         config = self.config.produce_module_config(broker)
         for module in self.config.modules:
             config.module = module
+            logger.info('generation {} for {} from {} to {}'.format(
+                module,
+                config.broker,
+                config.start_date(),
+                config.end_date(),
+            ))
             op = self.mod_map.get(module)(config)
             op.run()
 
     def create_all_bids(self):
         all_name = 'all@{}--{}-bids.csv'.format(self.config.start_date,
                                                 self.config.end_date)
+        logger.info('Creating all bids csv from {} to {}'.format(
+            self.config.start_date,
+            self.config.end_date
+        ))
         with open(os.path.join(self.config.work_dir, all_name), 'w+')\
                 as part_csv:
             writer = csv.writer(part_csv)
@@ -165,6 +172,7 @@ class Report(object):
         zname = 'all@{}--{}-tenders-refunds.zip'.format(
             self.config.start_date, self.config.end_date
         )
+        logger.info('Creating all tenders zip')
         self._zip(zname, [os.path.join(self.config.work_dir,
                                        '{}@{}--{}-{}.csv'.format(
                                            broker,
@@ -175,6 +183,7 @@ class Report(object):
                           for broker in self.config.brokers if broker != 'all'])
 
     def create_all_bids_archive(self):
+        logger.info('Creating all bids zip')
         zname = 'all@{}--{}-bids.zip'.format(
             self.config.start_date, self.config.end_date
         )
@@ -200,6 +209,7 @@ class Report(object):
                                                  self.config.start_date,
                                                  self.config.end_date,
                                                  '-'.join(self.config.include))
+            logger.info('Packing {}'.format(zip_name))
             files = [os.path.join(self.config.work_dir,
                                   '{}@{}--{}-{}.csv'.format(broker,
                                                             self.config.start_date,
@@ -227,6 +237,7 @@ class Report(object):
                                               self.config.end_date,
                                               '-'.join(self.config.include))
                 ]
+            logger.info('Sending files to s3: {}'.format(files))
             self.aws.send_files([os.path.join(self.config.work_dir, f) for f in files], timestamp=self.run_time)
 
     def clean_up(self):
@@ -243,10 +254,23 @@ class Report(object):
                          'all@{}--{}-bids.csv'.format(self.config.start_date,
                                                       self.config.end_date))
         ]
-        map(os.remove, files)
+        try:
+            logger.info('Run clean up')
+            map(os.remove, files)
+        except:
+            pass
 
     def run(self):
+        logger.info('Starting generation {}--{}.'.format(
+            self.config.start_date,
+            self.config.end_date)
+        )
+        logger.info('Brokers {}'.format(self.config.brokers))
+        logger.info('Types: {}'.format(self.config.modules))
         if self.config.timestamp:
+            logger.info('Sending from timestamp {}'.format(
+                self.config.timestamp)
+            )
             self.aws.send_from_timestamp(self.config.timestamp)
         else:
             for broker in [b for b in self.config.brokers if b != 'all']:
