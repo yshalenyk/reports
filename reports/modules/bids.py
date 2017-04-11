@@ -1,13 +1,12 @@
 import logging
+from reports.helpers import thresholds_headers
+
 from reports.core import (
     BaseBidsGenerator,
     RowMixin,
     RowInvoiceMixin,
     HeadersToRowMixin,
     CSVMixin
-)
-from reports.helpers import (
-    thresholds_headers
 )
 
 logger = logging.getLogger(__name__)
@@ -50,12 +49,12 @@ class Invoices(BaseBidsGenerator,
                HeadersToRowMixin,
                CSVMixin
                ):
-    counter = [0 for _ in range(5)]
     module = 'invoices'
     fields = headers
 
     def __init__(self, config):
         self.headers = config.headers
+        self.counter = [0 for _ in range(5)]
         BaseBidsGenerator.__init__(self, config)
 
     def row(self, row):
