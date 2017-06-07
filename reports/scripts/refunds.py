@@ -1,9 +1,6 @@
-from reports.helpers import (
-    create_arguments
-)
-
 from reports.modules import Refunds
 from reports.config import Config
+from reports.helpers import create_arguments
 
 
 def run():

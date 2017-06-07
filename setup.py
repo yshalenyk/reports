@@ -11,7 +11,8 @@ install_requires = [
     'pyminizip',
     'arrow',
     'boto3',
-    'Jinja2'
+    'Jinja2',
+    'retrying'
 ]
 
 test_requires = install_requires + [

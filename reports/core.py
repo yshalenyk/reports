@@ -4,17 +4,15 @@ import csv
 import os
 import os.path
 import logging
+from retrying import retry
 from collections import OrderedDict
 from couchdb.design import ViewDefinition
 
-from reports.design import (
-    bids_owner_date,
-    tenders_owner_date
-)
+from reports.design import bids_owner_date, tenders_owner_date
 from reports.helpers import value_currency_normalize
 
-views = [bids_owner_date, tenders_owner_date]
-logger = logging.getLogger(__name__)
+VIEWS = [bids_owner_date, tenders_owner_date]
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseUtility(object):
@@ -32,8 +30,8 @@ class BaseUtility(object):
             self.config.admin_db_url,
             session=couchdb.Session(retry_delays=range(10))
         )
-        ViewDefinition.sync_many(self.adb, views)
-        logger.info('Start {}. Params: {} -> {}--{}'.format(self.module,
+        ViewDefinition.sync_many(self.adb, VIEWS)
+        LOGGER.info('Start {}. Params: {} -> {}--{}'.format(self.module,
                                                             self.config.broker,
                                                             self.config.start_date(),
                                                             self.config.end_date()))
@@ -45,6 +43,9 @@ class BaseUtility(object):
         return self.config.payments[-1]
 
     @property
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def response(self):
         date = self.config.end_date()
         if not date:
@@ -92,6 +93,7 @@ class RowInvoiceMixin(object):
 
 class HeadersToRowMixin(object):
 
+    @retry(stop_max_attempt_number=5)
     def record(self, row):
         record = OrderedDict()
         for f in self.fields:
@@ -103,7 +105,7 @@ class HeadersToRowMixin(object):
                 record['currency'],
                 row['startdate']
             )
-            logger.info('Changed value {} -> {} by exchange rate'
+            LOGGER.info('Changed value {} -> {} by exchange rate'
                         ' {} ({})'.format(value, record['value'],
                                           record['rate'], row['startdate']))
         return record
@@ -111,6 +113,9 @@ class HeadersToRowMixin(object):
 
 class CSVMixin(object):
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def run(self):
         if not self.headers:
             raise ValueError
@@ -122,52 +127,3 @@ class CSVMixin(object):
             writer.writerow(self.headers)
             for row in self.rows:
                 writer.writerow(row)
-
-
-class BaseBidsUtility(BaseUtility):
-
-    view = 'report/bids_owner_date'
-
-
-class BaseTendersUtility(BaseUtility):
-
-    view = 'report/tenders_owner_date'
-
-
-class RowMixin(object):
-
-    def rows(self, response):
-        for resp in response:
-            row = self.row(resp["value"])
-            if row:
-                yield row
-
-
-class RowInvoiceMixin(object):
-
-    def rows(self):
-        for resp in self.response:
-            self.row(resp['value'])
-        for row in [
-            self.payments,
-            self.counter,
-            [c * v for c, v in zip(self.counter, self.config.payments)]
-        ]:
-            yield row
-
-
-class HeadersToRowMixin(object):
-
-    def record(self, row):
-        record = {header: row.get(header, '') for header in self.headers}
-        if str(record['currency']) != 'UAH':
-            value = record['value']
-            record['value'], record['rate'] = value_currency_normalize(
-                float(record['value']),
-                record['currency'],
-                record['startdate']
-            )
-            logger.info('Changed value {} -> {} by exchange rate'
-                        ' {} ({})'.format(value, record['value'],
-                                          record['rate'], record['startdate']))
-        return [str(v) for v in record.values()]

@@ -10,7 +10,6 @@ from reports.core import (
 )
 
 logger = logging.getLogger(__name__)
-
 headers = [
     "tender",
     "tenderID",
@@ -35,9 +34,6 @@ class Bids(BaseBidsGenerator,
     def row(self, row):
         record = self.record(row)
         record['bill'] = self.get_payment(record['value'])
-        if self.config.include_cancelled and row.get('cancelled', ''):
-            record['bill'] = -record['bill']
-
         logger.info(
             "Bill {} for tender {} with value {}".format(
                 record['bill'], record['tender'], record['value']

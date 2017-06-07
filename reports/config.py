@@ -1,12 +1,7 @@
-from __future__ import print_function
-
 import os.path
 import yaml
-from reports.helpers import (
-    convert_date,
-    create_db_url,
+from reports.helpers import convert_date, create_db_url,\
     thresholds_headers
-)
 
 
 ARGS = [
@@ -46,28 +41,20 @@ class Config(object):
     @property
     def thresholds(self):
         return [float(i) for i in self.config['payments']['thresholds']]
-
     @property
     def payments(self):
         section = 'emall' if self.module in ['refunds', 'tenders'] else 'cdb'
-        return [float(i) for i in self.config.get('payments', 'thresholds')]
-
-    @property
-    def payments(self):
-        section = 'emall' if self.modul in ['refunds', 'tenders'] else 'cdb'
-        return [float(i.strip()) for i in self.config.get('payments')(section)]
+        return self.config['payments'][section]
 
     @property
     def out_path(self):
         return self.config.get('out', '').get('out_dir', '')
 
-    @property
     def start_date(self):
         if len(self.period) > 0:
             return convert_date(self.period[0])
         return ''
 
-    @property
     def end_date(self):
         if len(self.period) > 1:
             return convert_date(self.period[1])
@@ -75,9 +62,9 @@ class Config(object):
 
     @property
     def out_file(self):
-        start = self.start_date.split('T')[0]\
+        start = self.start_date().split('T')[0]\
                 if self.start_date else ''
-        end = self.end_date.split('T')[0]\
+        end = self.end_date().split('T')[0]\
                 if self.end_date else ''
         name = "{}@{}--{}-{}.csv".format(
             self.broker,

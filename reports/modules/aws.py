@@ -1,21 +1,17 @@
 import boto3
-from botocore.exceptions import (
-    ClientError
-)
+from botocore.exceptions import ClientError
 
 import os
 import os.path
 import re
 import logging
 import smtplib
+from retrying import retry
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE
 from email.header import Header
 
-from jinja2 import (
-    Environment,
-    PackageLoader
-)
+from jinja2 import Environment, PackageLoader
 from datetime import datetime
 
 from reports.helpers import get_operations
@@ -36,6 +32,9 @@ class AWSClient(object):
         self.links = []
         self.brokers = []
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def _render_email(self, context):
         template = self.template_env.get_template('email.html')
         return template.render(context)
@@ -52,7 +51,11 @@ class AWSClient(object):
         else:
             entry['type'] = ', '.join(operations)
         return entry
+    
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def send_files(self, files, timestamp=''):
         if not timestamp:
             timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S-%f")
@@ -82,6 +85,9 @@ class AWSClient(object):
             except ClientError as e:
                 logger.info("Error during uploading {}. Error: {}".format(f, e))
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def send_emails(self, email=None):
         if getattr(self, 'not_notify', False):
             return
@@ -110,6 +116,9 @@ class AWSClient(object):
         finally:
             smtpserver.close()
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def send_from_timestamp(self, timestamp):
         cred = self.vault.s3()
 

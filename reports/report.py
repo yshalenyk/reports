@@ -3,6 +3,7 @@ import yaml
 import argparse
 import csv
 import pyminizip
+from retrying import retry
 from datetime import date
 from datetime import datetime
 from logging import getLogger
@@ -14,14 +15,8 @@ from reports.helpers import generation_period, convert_date
 from reports.config import Config
 from reports.vault import Vault
 
-from reports.modules import (
-    Bids,
-    Invoices,
-    Tenders,
-    Refunds,
-    AWSClient
-)
-
+from reports.modules import Bids, Invoices,\
+    Tenders, Refunds, AWSClient
 
 ARGS = [
     'config',
@@ -138,6 +133,9 @@ class Report(object):
             op = self.mod_map.get(module)(config)
             op.run()
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def create_all_bids(self):
         all_name = 'all@{}--{}-bids.csv'.format(self.config.start_date,
                                                 self.config.end_date)
@@ -160,6 +158,9 @@ class Report(object):
                     for row in reader:
                         writer.writerow(row)
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def _zip(self, name, files, password=None):
         pyminizip.compress_multiple(
             files,
@@ -168,6 +169,9 @@ class Report(object):
             4
         )
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def create_tenders_archive(self):
         zname = 'all@{}--{}-tenders-refunds.zip'.format(
             self.config.start_date, self.config.end_date
@@ -182,6 +186,9 @@ class Report(object):
                           for name in ['tenders', 'refunds']
                           for broker in self.config.brokers if broker != 'all'])
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def create_all_bids_archive(self):
         logger.info('Creating all bids zip')
         zname = 'all@{}--{}-bids.zip'.format(
@@ -202,6 +209,9 @@ class Report(object):
 
         self._zip(zname, files, self.vault.broker_password('all'))
 
+    @retry(stop_max_attempt_number=7,
+           wait_exponential_multiplier=1000,
+           wait_exponential_max=10000)
     def create_brokers_archives(self):
 
         for broker in [b for b in self.config.brokers if b != 'all']:
@@ -241,6 +251,7 @@ class Report(object):
             self.aws.send_files([os.path.join(self.config.work_dir, f) for f in files], timestamp=self.run_time)
 
     def clean_up(self):
+        """TODO: clean zip if run was successful"""
         files = [
             os.path.join(self.config.work_dir,
                          '{}@{}--{}-{}.csv'.format(broker,
