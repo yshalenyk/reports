@@ -47,6 +47,5 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=test_requires,
-    test_suite='reports.tests.main.suite',
     extras_require={'test': test_requires},
 )

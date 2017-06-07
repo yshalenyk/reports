@@ -2,7 +2,7 @@ import pytest
 import warnings
 import mock
 from reports.helpers import value_currency_normalize
-from reports.tests.utils import MockCurrencyResponce
+from utils import MockCurrencyResponce
 
 def test_value_normalization():
     with pytest.raises(ValueError):

@@ -7,7 +7,7 @@ from copy import copy
 from reports.modules import (
     Invoices
 )
-from reports.tests.utils import (
+from utils import (
     BaseBillingTest,
     test_data,
     assert_csv,

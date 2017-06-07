@@ -5,7 +5,7 @@ import os.path
 from reports.config import Config
 from reports.modules import Refunds
 from copy import copy
-from reports.tests.utils import (
+from utils import (
     BaseBillingTest,
     test_data,
     assert_csv,

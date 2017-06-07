@@ -4,7 +4,7 @@ from copy import copy
 from dateutil.parser import parse
 from reports.config import Config
 from reports.modules import Bids
-from reports.tests.utils import (
+from utils import (
     BaseBillingTest,
     test_data,
     assert_csv,
